@@ -1,0 +1,135 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>Equeipment Manager</title>
+        <style>
+            body { font-family: Arial, Helvetica, sans-serif; margin: 20px; }
+            nav a { margin-right: 12px; text-decoration: none; }
+            table { border-collapse: collapse; width: 100%; margin-top: 12px; }
+            th, td { border: 1px solid #ccc; padding: 8px; } 
+            th { background: #f4f4f4; text-align: left; }
+            .muted {color: #666;}
+        </style>
+    </head>
+    <body>
+        <h1>Equipment Manager Dashboard</h1>
+        <p>logged in as: {{ user.name }} ({{ user.role }})</p>
+
+        <form method="POST" action="/logout">
+            <button type="submit">Logout</button>
+        </form>
+
+        <!--"tabs"-->
+        <nav>
+            <a href="/dashboard">Overview</a>
+            <a href="#" onclick="return false">Work Orders</a>
+            <a href="#" onclick="return false">Mechanics</a>
+            <a href="#" onclick="return false">Inspections</a>
+        </nav>
+
+        <hr />
+
+        <h2>Open Work Orders (Unassigned)</h2>
+
+        <form method="POST" action="/manager/create-assignment">
+            <label><strong>Assign selected work orders to: </strong></label>
+            <select name="mechanic_id" required>
+                <option value="">--- Select mechanic ---</option>
+                {% for mech in mechanics %}
+                    <option value="{{ mech.user_id }}">{{ mech.name }} (ID {{ mech.user_id }})</option>
+                {% endfor %}
+            </select>
+            <button type="submit">Create Assignment</button>
+        </form>
+
+        {% if open_work_orders and open_work_orders|length > 0 %}
+            <table>
+                <tr>
+                    <th>Select</th>
+                    <th>WO #</th>
+                    <th>Machine</th>
+                    <th>Notes</th>
+                    <th>Priority</th>
+                    <th>Created</th>
+                </tr>
+
+                {% for wo in open_work_orders %}
+                    <tr>
+                        <td>
+                            <input type="checkbox" name="work_order_ids" value="{{ wo.work_order_id }}">
+                        </td>
+                        <td>{{ wo.work_order_id }}</td>
+                        <td>{{ m.serial_number }}</td>
+                        <td>{{ wo.notes] }}</td>
+                        <td>{{ wo.priority }}</td>
+                        <td>{{ wo.created_at }}</td>
+                    </tr>
+                {% endfor %}
+            </table>
+        {% else %}
+            <p>No open work orders!</p>
+        {% endif %}
+
+        <h2>Mechanics</h2>
+
+        {% if mechanics and mechanics|length > 0 %}
+            <table>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Status</th>
+                </tr>
+                {% for m in mechanics %}
+                    <tr>
+                        <td>{{ m.user_id }}</td>
+                        <td>{{ m.name }}</td>
+                        <td>{{ m.email }}</td>
+                        <td>{{ m.status }}</td>
+                    </tr>
+                {% endfor %}
+            </table>
+        {% else %}
+            <p>No mechanics found.</p>
+        {% endif %}
+
+        <h2>Machinces</h2>
+            
+            {% if machines and machines|length > 0 %}
+                <table>
+                    <tr>
+                        <th>ID</th>
+                        <th>Serial</th>
+                        <th>Type</th>
+                        <th>Make</th>
+                        <th>Model</th>
+                        <th>Year</th>
+                        <th>Status</th>
+                        <th>Job</th>
+                    </tr>
+
+                    {% for m in machines %}
+                        <tr>
+                            <td>{{ m[0] }}</td>
+                            <td>{{ m[1] }}</td>
+                            <td>{{ m[2] }}</td>
+                            <td>{{ m[3] }}</td>
+                            <td>{{ m[4] }}</td>
+                            <td>{{ m[5] }}</td>
+                            <td>{{ m[6] }}</td>
+                            <td>
+                                {% if m[8] %}
+                                    {{ m[8] }}
+                                {% else %}
+                                    Unassigned
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            {% else %}
+                <p>No machines found.</p>
+            {% endif %}       
+    </body>
+</html>
