@@ -27,7 +27,7 @@ def create_tables(conn):
 
     # Job table
     cursor.execute("""
-    CREATE TABLE IF NOT EXISTS Job(
+    CREATE TABLE IF NOT EXISTS Job (
         job_id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         location TEXT,
@@ -40,7 +40,7 @@ def create_tables(conn):
     # Machine table
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS Machine (
-        machine_id INTEGER PRIMARY KEY,
+        machine_id INTEGER PRIMARY KEY AUTOINCREMENT,
         serial_number TEXT UNIQUE NOT NULL,
         type TEXT NOT NULL,
         make TEXT,
@@ -50,15 +50,15 @@ def create_tables(conn):
         operational_state TEXT NOT NULL DEFAULT 'running'
             CHECK (operational_state IN ('running', 'down')),
         current_job_id INTEGER,
+        active INTEGER NOT NULL DEFAULT 1,
         FOREIGN KEY (current_job_id) REFERENCES Job(job_id)
-                   
     );
     """)
 
     # Master checklist items
     cursor.execute("""
-    CREATE TABLE IF NOT EXISTS MasterCheckListItem (
-        item_id INTEGER PRIMARY KEY,
+    CREATE TABLE IF NOT EXISTS MasterChecklistItem (
+        item_id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT UNIQUE NOT NULL,
         description TEXT,
         active INTEGER NOT NULL DEFAULT 1
@@ -75,17 +75,52 @@ def create_tables(conn):
     );
     """)
 
+    # Template items
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS TemplateItems (
+        item_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        template_id INTEGER NOT NULL,
+        description TEXT NOT NULL,
+        required INTEGER NOT NULL DEFAULT 1,
+        FOREIGN KEY (template_id) REFERENCES ChecklistTemplate(template_id)
+    );
+    """)
+
     # Inspections
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS Inspections (
         inspection_id INTEGER PRIMARY KEY AUTOINCREMENT,
         machine_id INTEGER NOT NULL,
         operator_id INTEGER NOT NULL,
-        inspection_date TEXT DEFAULT (datetime('now')),
+        inspection_date TEXT NOT NULL DEFAULT (datetime('now')),
         notes TEXT,
-        passed INTEGER DEFAULT 1,
+        passed INTEGER NOT NULL DEFAULT 1,
         FOREIGN KEY (machine_id) REFERENCES Machine(machine_id),
         FOREIGN KEY (operator_id) REFERENCES User(user_id)
+    );
+    """)
+
+    # Inspection items
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS InspectionItems (
+        inspection_item_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        inspection_id INTEGER NOT NULL,
+        item_name TEXT NOT NULL,
+        passed INTEGER NOT NULL DEFAULT 1,
+        note TEXT,
+        FOREIGN KEY (inspection_id) REFERENCES Inspections(inspection_id)
+    );
+    """)
+
+    # Mechanic assignments
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS MechanicAssignments (
+        assignment_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        mechanic_id INTEGER NOT NULL,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        status TEXT NOT NULL DEFAULT 'open'
+            CHECK (status IN ('open', 'in_progress', 'closed')),
+        FOREIGN KEY (mechanic_id) REFERENCES User(user_id)
     );
     """)
 
@@ -97,41 +132,21 @@ def create_tables(conn):
         created_by INTEGER NOT NULL,
         assigned_to INTEGER,
         assignment_id INTEGER,
-        status TEXT DEFAULT 'open',
-        priority INTEGER DEFAULT 1,
-        created_at TEXT DEFAULT (datetime('now')),
+        status TEXT NOT NULL DEFAULT 'open'
+            CHECK (status IN ('open', 'in_progress', 'closed')),
+        priority INTEGER NOT NULL DEFAULT 1
+            CHECK (priority IN (1, 2, 3)),
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
         completed_at TEXT,
         notes TEXT,
         FOREIGN KEY (machine_id) REFERENCES Machine(machine_id),
         FOREIGN KEY (created_by) REFERENCES User(user_id),
-        FOREIGN KEY (assigned_to) REFERENCES User(user_id)
+        FOREIGN KEY (assigned_to) REFERENCES User(user_id),
         FOREIGN KEY (assignment_id) REFERENCES MechanicAssignments(assignment_id)
     );
     """)
 
-    # Template items
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS TemplateItems (
-        item_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        template_id INTEGER NOT NULL,
-        description TEXT NOT NULL,
-        required INTEGER DEFAULT 1,
-        FOREIGN KEY (template_id) REFERENCES ChecklistTemplate(template_id)
-    );
-    """)
-
-    # Mechanic assignments
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS MechanicAssignments (
-        assignment_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        mechanic_id INTEGER NOT NULL,
-        created_at TEXT DEFAULT (datetime('now')),
-        status TEXT DEFAULT 'open',
-        FOREIGN KEY (mechanic_id) REFERENCES User(user_id)
-    );
-    """)
-
-    #user availablity 
+    # User shifts
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS UserShift (
         shift_id INTEGER PRIMARY KEY AUTOINCREMENT,

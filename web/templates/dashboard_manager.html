@@ -41,7 +41,7 @@
                 {% endfor %}
             </select>
             <button type="submit">Create Assignment</button>
-        </form>
+        
 
         {% if open_work_orders and open_work_orders|length > 0 %}
             <table>
@@ -60,8 +60,8 @@
                             <input type="checkbox" name="work_order_ids" value="{{ wo.work_order_id }}">
                         </td>
                         <td>{{ wo.work_order_id }}</td>
-                        <td>{{ m.serial_number }}</td>
-                        <td>{{ wo.notes] }}</td>
+                        <td>{{ wo.serial_number }}</td>
+                        <td>{{ wo.notes }}</td>
                         <td>{{ wo.priority }}</td>
                         <td>{{ wo.created_at }}</td>
                     </tr>
@@ -70,6 +70,8 @@
         {% else %}
             <p>No open work orders!</p>
         {% endif %}
+
+        </form>
 
         <h2>Mechanics</h2>
 

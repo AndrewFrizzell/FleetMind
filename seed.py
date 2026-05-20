@@ -11,7 +11,19 @@ def seed():
     cur = conn.cursor()
 
     # Clear data (order matters with FK)
-    for t in ["WorkOrder", "Inspections", "Machine", "Job", "ChecklistTemplate", "TemplateItems", "MasterCheckListItem", "MechanicAssignments", "UserShift", "User"]:
+    for t in [
+    "WorkOrder",
+    "InspectionItems",
+    "Inspections",
+    "Machine",
+    "Job",
+    "TemplateItems",
+    "ChecklistTemplate",
+    "MasterChecklistItem",
+    "MechanicAssignments",
+    "UserShift",
+    "User"
+    ]:
         try:
             cur.execute(f"DELETE FROM {t};")
         except sqlite3.OperationalError:
@@ -81,12 +93,12 @@ def seed():
 
     # 5) WorkOrder (created_by required; assigned_to optional)
     cur.execute(
-        """
-        INSERT INTO WorkOrder (machine_id, created_by, assigned_to, status, priority, notes)
-        VALUES (?, ?, ?, ?, ?, ?);
-        """,
-        (101, mgr1_id, mech1_id, "open", 3, f"From inspection {insp1_id}: fix hydraulic leak.")
-    )
+    """
+    INSERT INTO WorkOrder (machine_id, created_by, assigned_to, status, priority, notes)
+    VALUES (?, ?, ?, ?, ?, ?);
+    """,
+    (101, mgr1_id, None, "open", 3, f"From inspection {insp1_id}: fix hydraulic leak.")
+)
 
     conn.commit()
     conn.close()
