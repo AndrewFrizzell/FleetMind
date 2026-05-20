@@ -150,7 +150,7 @@ def close_assignment_if_finished(conn, assignment_id):
         SELECT COUNT(*)
         FROM WorkOrder
         WHERE assignment_id = ?
-            AND status != 'completed'
+            AND status != 'closed'
     """, (assignment_id,))
 
     remaining = cursor.fetchone()[0]
@@ -158,7 +158,7 @@ def close_assignment_if_finished(conn, assignment_id):
     if remaining == 0:
         cursor.execute("""
             UPDATE MechanicAssignments
-            SET status = 'completed'
+            SET status = 'closed'
             WHERE assignment_id = ?
         """, (assignment_id,))
 
@@ -177,14 +177,18 @@ def complete_work_order(conn, work_order_id):
         FROM WorkOrder
         WHERE work_order_id = ?
     """, (work_order_id,))
+
     row = cursor.fetchone()
+
     if row is None:
         raise ValueError("Work order does not exist.")
+    
     assignment_id = row[0]
 
     cursor.execute("""
         UPDATE WorkOrder
-        SET status = 'completed'
+        SET status = 'closed',
+            completed_at = datetime('now')
         WHERE work_order_id = ?
     """, (work_order_id,))
 

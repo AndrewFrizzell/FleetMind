@@ -6,8 +6,15 @@ sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 
 from fleetmind_db import get_connection
-from logic import get_open_work_orders, get_mechanics, get_all_machines, create_mechanic_assignment
-
+from logic import (
+            get_open_work_orders, 
+            get_mechanics, 
+            get_all_machines, 
+            create_mechanic_assignment,
+            get_assignments_for_mechanics,
+            get_work_orders_for_assignment,
+            complete_work_order
+)
 
 app = Flask(__name__)
 app.secret_key = "dev-secret-change-me" #change this later
@@ -108,7 +115,24 @@ def dashboard():
             machines=machines
         )
     if role == "mechanic":
-        return render_template("dashboard_mechanic.html", user=session)
+        conn = get_connection()
+        assignments = get_assignments_for_mechanics(conn, session.get("user_id"))
+
+        assignment_data = []
+        for assignment in assignments:
+            work_orders = get_work_orders_for_assignment(conn, assignment["assignment_id"])
+            assignment_data.append({
+                "assignment": assignment,
+                "work_orders": work_orders
+            })
+
+        conn.close()
+
+        return render_template(
+                    "dashboard_mechanic.html", 
+                    user=session,
+                    assignment_data=assignment_data
+        )
     
     #fallback
     return "unknown role", 400
@@ -141,6 +165,31 @@ def manager_create_assignment():
         conn.close()
 
     flash(f"Created assignment #{assignment_id}.")
+    return redirect(url_for("dashboard"))
+
+@app.route("/mechanic/complete-work-order", methods=["POST"])
+@login_required
+def mechanic_complete_work_order():
+
+    if session.get("role") != "mechanic":
+        return "Forbidden", 403
+    
+    work_order_id = request.form.get("work_order_id")
+
+    if not work_order_id:
+        flash("Missing work order.")
+        return redirect(url_for("dashboard"))
+    
+    conn = get_connection()
+
+    try:
+        complete_work_order(conn, int(work_order_id))
+        flash(f"Work order #{work_order_id} completed.")
+    except Exception as e:
+        conn.rollback()
+        flash(f"Error: {e}")
+    finally:
+        conn.close()
     return redirect(url_for("dashboard"))
 
 if __name__ == "__main__":
