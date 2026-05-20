@@ -1,0 +1,79 @@
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    margin: 0;
+    background: #f4f6f8;
+    color: #222;
+}
+
+.container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+.card {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+th, td {
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+    text-align: left;
+}
+
+th {
+    background: #eef1f5;
+}
+
+button {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+button.primary {
+    background: #1f6feb;
+    color: white;
+}
+
+button.danger {
+    background: #d1242f;
+    color: white;
+}
+
+.status-open {
+    color: #9a6700;
+    font-weight: bold;
+}
+
+.status-in_progress {
+    color: #0969da;
+    font-weight: bold;
+}
+
+.status-closed {
+    color: #1a7f37;
+    font-weight: bold;
+}
+
+.muted {
+    color: #666;
+}

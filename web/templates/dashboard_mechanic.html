@@ -3,60 +3,65 @@
     <head>
         <meta charset="utf-8" />
         <title>Mechanic Dashboard</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     </head>
     <body>
-        <h1>Equipment Manager Dashboard</h1>
-        <p>logged in as: {{ user.name }} ({{ user.role }})</p>
+        <div class="container">
+            <div class="card">
+                <h1>Mechanic Dashboard</h1>
+                <p>logged in as: {{ user.name }} ({{ user.role }})</p>
 
-        <form method="POST" action="/logout">
-            <button type="submit">Logout</button>
-        </form>
+                <form method="POST" action="/logout">
+                    <button type="submit">Logout</button>
+                </form>
+            </div>
+            
+            <div class="card">
+                <h2>My Assignments</h2>
 
-        <hr />
+                {% if assignment_data and assignment_data|length > 0 %}
+                    {% for item in assignment_data %}
+                        <h3>Assignment #{{ item.assignment.assignment_id }}</h3>
+                        <p>Status: {{ item.assignment.status }} | {{ item.assignment.created_at }}</p>
 
-        <h2>My Assignments</h2>
-
-        {% if assignment_data and assignment_data|length > 0 %}
-            {% for item in assignment_data %}
-                <h3>Assignment #{{ item.assignment.assignment_id }}</h3>
-                <p>Status: {{ item.assignment.status }} | {{ item.assignment.created_at }}</p>
-
-                {% if item.work_orders and item.work_orders|length > 0 %}
-                    <table border="1" cellpadding="8">
-                        <tr>
-                            <th>WO #</th>
-                            <th>Machine</th>
-                            <th>Notes</th>
-                            <th>Status</th>
-                            <th>Priority</th>
-                            <th>Action</th>
-                        </tr>
-                        {% for wo in item.work_orders %}
-                            <tr>
-                                <td>{{ wo.work_order_id }}</td>
-                                <td>{{ wo.serial_number }}</td>
-                                <td>{{ wo.notes }}</td>
-                                <td>{{ wo.status }}</td>
-                                <td>{{ wo.priority }}</td>
-                                <td>
-                                    {% if wo.status != "closed" %}
-                                        <form method="POST" action="/mechanic/complete-work-order"">
-                                            <input type="hidden" name="work_order_id" value="{{ wo.work_order_id }}">
-                                            <button type="submit">Completed</button>
-                                        </form>
-                                    {% else %}
-                                        Closed
-                                    {% endif %}
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </table>
+                        {% if item.work_orders and item.work_orders|length > 0 %}
+                            <table border="1" cellpadding="8">
+                                <tr>
+                                    <th>WO #</th>
+                                    <th>Machine</th>
+                                    <th>Notes</th>
+                                    <th>Status</th>
+                                    <th>Priority</th>
+                                    <th>Action</th>
+                                </tr>
+                                {% for wo in item.work_orders %}
+                                    <tr>
+                                        <td>{{ wo.work_order_id }}</td>
+                                        <td>{{ wo.serial_number }}</td>
+                                        <td>{{ wo.notes }}</td>
+                                        <td>{{ wo.status }}</td>
+                                        <td>{{ wo.priority }}</td>
+                                        <td>
+                                            {% if wo.status != "closed" %}
+                                                <form method="POST" action="/mechanic/complete-work-order"">
+                                                    <input type="hidden" name="work_order_id" value="{{ wo.work_order_id }}">
+                                                    <button type="submit">Completed</button>
+                                                </form>
+                                            {% else %}
+                                                Closed
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </table>
+                        {% else %}
+                            <p>No work orders in this assignment.</p>
+                        {% endif %}
+                    {% endfor %}
                 {% else %}
-                    <p>No work orders in this assignment.</p>
+                    <p>You do not have any assignments yet.</p>
                 {% endif %}
-            {% endfor %}
-        {% else %}
-            <p>You do not have any assignments yet.</p>
-        {% endif %}
+            </div>
+        </div>
     </body>
 </html>

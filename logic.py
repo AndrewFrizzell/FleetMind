@@ -1,3 +1,7 @@
+#=====================================
+#inspections
+#=====================================
+
 #creates inspections 
 def create_inspection(conn, machine_id, operator_id, results, notes=""):
     cursor = conn.cursor()
@@ -12,7 +16,15 @@ def create_inspection(conn, machine_id, operator_id, results, notes=""):
 
     # Loop through checklist results
     for item_id, passed in results.items():
-
+        cursor.execute("""
+            INSERT INTO InspectionItems (inspection_id, item_name, passed, note)
+            VALUES (?, ?, ?, ?)
+        """, (
+            inspection_id,
+            str(item_id),
+            int(passed),
+            ""
+        ))
         # Auto-create work order if failed
         if not passed:
             cursor.execute("""
@@ -27,31 +39,131 @@ def create_inspection(conn, machine_id, operator_id, results, notes=""):
     conn.commit()
     return inspection_id
 
-#creates work orders from inspections
-def assign_work_orders(conn, work_order_ids, mechanic_id):
+def get_active_checklist_items(conn):
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT item_id, name, description
+        FROM MasterCheckListItem
+        WHERE active = 1
+        ORDER BY item_id ASC
+    """)
+    return cur.fetchall()
+
+#======================================
+# work orders
+#======================================
+
+
+    #open work orders 
+def get_open_work_orders(conn):
     cursor = conn.cursor()
 
-    # Verify mechanic exists and is a mechanic
+    cursor.execute("""
+        SELECT 
+            wo.work_order_id,
+            m.serial_number,
+            wo.notes,
+            wo.priority,
+            wo.created_at
+        FROM WorkOrder wo
+        JOIN Machine m on wo.machine_id = m.machine_id
+        WHERE wo.status = 'open'
+            AND wo.assigned_to IS NULL
+        ORDER BY wo.priority DESC, wo.created_at ASC
+    """)
+
+    return cursor.fetchall()
+
+#work orders for assignment 
+def get_work_orders_for_assignment(conn, assignment_id):
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT 
+            wo.work_order_id,
+            m.serial_number,
+            wo.notes,
+            wo.status,
+            wo.priority
+        FROM WorkOrder wo
+        JOIN Machine m ON wo.machine_id = m.machine_id
+        WHERE wo.assignment_id = ?
+        ORDER BY wo.priority DESC
+    """, (assignment_id,))
+
+    return cursor.fetchall()
+
+#foreman creates work orders
+def create_manual_work_order(conn, machine_id, foreman_id, notes, priority=1):
+    cursor = conn.cursor()
+
+    #verify user is a foreman 
     cursor.execute("""
         SELECT role FROM User WHERE user_id = ?
-    """, (mechanic_id,))
+    """, (foreman_id,))
     row = cursor.fetchone()
 
     if row is None:
         raise ValueError("User does not exist.")
+    
+    if row[0] != "foreman":
+        raise ValueError("User is not a foreman.")
+    
+    #verify machine exists
+    cursor.execute("""
+        SELECT machine_id FROM Machine WHERE machine_id = ?
+    """, (machine_id,))
 
-    if row[0] != "mechanic":
-        raise ValueError("User is not a mechanic.")
-
-    # Assign work orders
-    for work_order_id in work_order_ids:
-        cursor.execute("""
-            UPDATE WorkOrder
-            SET assigned_to = ?, status = 'in_progress'
-            WHERE work_order_id = ?
-        """, (mechanic_id, work_order_id))
+    if cursor.fetchone() is None:
+        raise ValueError("Machine does not exist.")
+    
+     #create work order
+    cursor.execute("""
+        INSERT INTO WorkOrder (machine_id, created_by, status, priority, notes)
+        VALUES (?, ?, 'open', ?, ?)
+    """, (machine_id, foreman_id, priority, notes))
 
     conn.commit()
+    return cursor.lastrowid
+
+    
+#work orders based on jobs 
+def get_work_orders_for_jobs(conn, job_id, include_completed=False):
+    cursor = conn.cursor()
+
+    base_sql = """
+        SELECT
+            wo.work_order_id,
+            m.serial_number,
+            wo.status,
+            wo.priority,
+            wo.created_at,
+            wo.assigned_to,
+            wo.assignment_id,
+            wo.notes
+        FROM WorkOrder wo
+        JOIN Machine m on wo.machine_id = m.machine_id
+        WHERE m.current_job_id = ?
+    """
+
+    params = [job_id]
+
+    if not include_completed:
+        base_sql += " AND  wo.status != 'closed'"
+
+    base_sql += " ORDER BY wo.priority DESC, wo.created_at ASC"
+
+    cursor.execute(base_sql, params)
+    return cursor.fetchall()
+
+    
+
+
+
+#=====================================
+# mechanic assignments
+#=====================================
+
 
 # mechanic assignments compiler
 def create_mechanic_assignment(conn, mechanic_id, work_order_ids):
@@ -87,25 +199,6 @@ def create_mechanic_assignment(conn, mechanic_id, work_order_ids):
     conn.commit()
     return assignment_id
 
-#open work orders 
-def get_open_work_orders(conn):
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        SELECT 
-            wo.work_order_id,
-            m.serial_number,
-            wo.notes,
-            wo.priority,
-            wo.created_at
-        FROM WorkOrder wo
-        JOIN Machine m on wo.machine_id = m.machine_id
-        WHERE wo.status = 'open'
-            AND wo.assigned_to IS NULL
-        ORDER BY wo.priority DESC, wo.created_at ASC
-    """)
-
-    return cursor.fetchall()
 
 #assignments for mechanics 
 def get_assignments_for_mechanics(conn, mechanic_id):
@@ -123,24 +216,6 @@ def get_assignments_for_mechanics(conn, mechanic_id):
 
     return cursor.fetchall()
 
-#work orders for assignment 
-def get_work_orders_for_assignment(conn, assignment_id):
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        SELECT 
-            wo.work_order_id,
-            m.serial_number,
-            wo.notes,
-            wo.status,
-            wo.priority
-        FROM WorkOrder wo
-        JOIN Machine m ON wo.machine_id = m.machine_id
-        WHERE wo.assignment_id = ?
-        ORDER BY wo.priority DESC
-    """, (assignment_id,))
-
-    return cursor.fetchall()
 
 #close assignemnt 
 def close_assignment_if_finished(conn, assignment_id):
@@ -197,67 +272,11 @@ def complete_work_order(conn, work_order_id):
 
     conn.commit()
 
-#foreman creates work orders
-def create_manual_work_order(conn, machine_id, foreman_id, notes, priority=1):
-    cursor = conn.cursor()
 
-    #verify user is a foreman 
-    cursor.execute("""
-        SELECT role FROM User WHERE user_id = ?
-    """, (foreman_id,))
-    row = cursor.fetchone()
 
-    if row is None:
-        raise ValueError("User does not exist.")
-    
-    if row[0] != "foreman":
-        raise ValueError("User is not a foreman.")
-    
-    #verify machine exists
-    cursor.execute("""
-        SELECT machine_id FROM Machine WHERE machine_id = ?
-    """, (machine_id,))
-
-    if cursor.fetchone() is None:
-        raise ValueError("Machine does not exist.")
-    
-    #create work order
-    cursor.execute("""
-        INSERT INTO WorkOrder (machine_id, created_by, status, priority, notes)
-        VALUES (?, ?, 'open', ?, ?)
-    """, (machine_id, foreman_id, priority, notes))
-
-    conn.commit()
-    return cursor.lastrowid
-
-#work orders based on jobs 
-def get_work_orders_for_jobs(conn, job_id, include_completed=False):
-    cursor = conn.cursor()
-
-    base_sql = """
-        SELECT
-            wo.work_order_id,
-            m.serial_number,
-            wo.status,
-            wo.priority,
-            wo.created_at,
-            wo.assigned_to,
-            wo.assignment_id,
-            wo.notes
-        FROM WorkOrder wo
-        JOIN Machine m on wo.machine_id = m.machine_id
-        WHERE m.current_job_id = ?
-    """
-
-    params = [job_id]
-
-    if not include_completed:
-        base_sql += " AND  wo.status != 'completed'"
-
-    base_sql += " ORDER BY wo.priority DESC, wo.created_at ASC"
-
-    cursor.execute(base_sql, params)
-    return cursor.fetchall()
+#===================================
+# machines
+#===================================   
 
 #move machine to job
 def move_machine_to_job(conn, machine_id, new_job_id):
@@ -294,6 +313,53 @@ def move_machine_to_job(conn, machine_id, new_job_id):
 
     conn.commit()
     return True #machine moved
+
+#get machine list 
+def get_all_machines(conn, include_inactive=True):
+    cur = conn.cursor()
+    
+    if include_inactive:
+        cur.execute("""
+            SELECT
+                m.machine_id,
+                m.serial_number,
+                m.type,
+                m.make,
+                m.model,
+                m.year,
+                m.status,
+                m.current_job_id,
+                j.name
+            FROM Machine m
+            LEFT JOIN Job j ON m.current_job_id = j.job_id
+            ORDER BY m.serial_number ASC
+        """)
+    else:
+        cur.execute("""
+            SELECT
+                m.machine_id,
+                m.serial_number,
+                m.type,
+                m.make,
+                m.model,
+                m.year,
+                m.status,
+                m.current_job_id,
+                j.name
+            FROM Machine m
+            LEFT JOIN Job j ON m.current_job_id = j.job_id
+            WHERE m.status = 'active'
+            ORDER BY m.serial_number ASC
+        """)
+
+    return cur.fetchall()
+        
+
+
+
+#==============================================
+# Users
+#==============================================
 
 #user checks in
 def check_in(conn, user_id, note=""):
@@ -371,44 +437,3 @@ def get_mechanics(conn):
     """)
     return cur.fetchall()
 
-#get machine list 
-def get_all_machines(conn, include_inactive=True):
-    cur = conn.cursor()
-    
-    if include_inactive:
-        cur.execute("""
-            SELECT
-                m.machine_id,
-                m.serial_number,
-                m.type,
-                m.make,
-                m.model,
-                m.year,
-                m.status,
-                m.current_job_id,
-                j.name
-            FROM Machine m
-            LEFT JOIN Job j ON m.current_job_id = j.job_id
-            ORDER BY m.serial_number ASC
-        """)
-    else:
-        cur.execute("""
-            SELECT
-                m.machine_id,
-                m.serial_number,
-                m.type,
-                m.make,
-                m.model,
-                m.year,
-                m.status,
-                m.current_job_id,
-                j.name
-            FROM Machine m
-            LEFT JOIN Job j ON m.current_job_id = j.job_id
-            WHERE m.status = 'active'
-            ORDER BY m.serial_number ASC
-        """)
-
-    return cur.fetchall()
-        
-    

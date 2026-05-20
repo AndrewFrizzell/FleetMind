@@ -98,7 +98,28 @@ def seed():
     VALUES (?, ?, ?, ?, ?, ?);
     """,
     (101, mgr1_id, None, "open", 3, f"From inspection {insp1_id}: fix hydraulic leak.")
-)
+    )
+    #6) chekclist items
+    checklist_items = [
+        ("Engine Oil", "Check engine oil level and leaks", 1),
+        ("Coolant", "Check coolant level and visible leaks", 1),
+        ("Hydraulic Fluid", "Check hydraulic fluid and leaks", 1),
+        ("Tires/Tracks", "Inspect tires or tracks for damage", 1),
+        ("Lights", "Check all lights", 1),
+        ("Horn/Backup Alarm", "Check horn and backup alarm", 1),
+        ("Brakes", "Check brake operation", 1),
+        ("Leaks", "Look for visible leaks under machine", 1),
+    ]
+
+    cur.executemany(
+        """
+        INSERT INTO MasterChecklistItem (name, description, active)
+        VALUES (?, ?, ?);
+        """,
+        checklist_items
+    )
+
+
 
     conn.commit()
     conn.close()

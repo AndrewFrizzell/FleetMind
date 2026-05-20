@@ -13,7 +13,9 @@ from logic import (
             create_mechanic_assignment,
             get_assignments_for_mechanics,
             get_work_orders_for_assignment,
-            complete_work_order
+            complete_work_order,
+            get_active_checklist_items,
+            create_inspection
 )
 
 app = Flask(__name__)
@@ -191,6 +193,47 @@ def mechanic_complete_work_order():
     finally:
         conn.close()
     return redirect(url_for("dashboard"))
+
+@app.route("/inspection/new", methods=["GET", "POST"])
+@login_required
+def new_inspection():
+    conn = get_connection()
+
+    if request.method == "POST":
+        machine_id = int(request.form.get("machine_id"))
+        notes = request.form.get("notes") or ""
+
+        checklist_items = get_active_checklist_items(conn)
+
+        results = {}
+
+        for item in checklist_items:
+            field_name = f"item_{item['item_id']}"
+            passed_value = request.form.get(field_name)
+
+            results[item["name"]] = passed_value == "pass"
+
+        create_inspection(
+            conn,
+            machine_id=machine_id,
+            operator_id=session["user_id"],
+            results=results,
+            notes=notes
+        )
+
+        conn.close()
+        flash("Inspection submitted.")
+        return redirect(url_for("dashboard"))
+    
+    machines = get_all_machines(conn, include_inactive=False)
+    checklist_items = get_active_checklist_items(conn)
+
+    return render_template(
+        "inspection_form.html",
+        user=session,
+        machines=machines,
+        checklist_items=checklist_items
+    )
 
 if __name__ == "__main__":
     #run from /web with python app.py

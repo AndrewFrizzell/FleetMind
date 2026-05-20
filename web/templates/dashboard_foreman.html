@@ -3,16 +3,24 @@
     <head>
         <meta charset="utf-8" />
         <title>Foreman Dashboard</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     </head>
     <body>
-        <h1>Equipment Manager Dashboard</h1>
-        <p>logged in as: {{ user.name }} ({{ user.role }})</p>
-
-        <form method="POST" action="/logout">
-            <button type="submit">Logout</button>
-        </form>
-
-        <hr />
-        <p>Next: show open work orders, assign/group into mechanic assignmetns.</p>
+        <div class="container">
+            <div class="card">
+                <h1>Equipment Manager Dashboard</h1>
+                <p>logged in as: {{ user.name }} ({{ user.role }})</p>
+                <form method="POST" action="/logout">
+                    <button type="submit">Logout</button>
+                </form>
+            </div>
+        <div class="card">
+            <nav>
+                <a href="{{ url_for('dashboard') }}">Dashboard</a>
+                <a href="{{ url_for('new_inspection') }}"></a>
+            </nav>
+        </div>
+            <p>Next: show open work orders, assign/group into mechanic assignmetns.</p>
+        </div>
     </body>
 </html>
