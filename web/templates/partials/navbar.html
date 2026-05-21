@@ -1,0 +1,16 @@
+<div class="topar">
+    <div class="nav-left">
+        <a href="{{ url_for('dashboard') }}">Dashboard</a>
+        <a href="{{ url_for('dashboard') }}">Machines</a>
+        {% if user.role == "equipment_manager" %}
+            <a href="#">Work Orders</a>
+            <a href="#">Mechanics</a>
+        {% endif %}
+    </div>
+
+    <div class="nav-right">
+        <span class="muted">{{ user.name }} ({{ user.role }})</span>
+        <form method="POST" action="/logout"></form>
+            <button type="submit" class="danger">Logout</button>
+    </div>
+</div>

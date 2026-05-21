@@ -14,6 +14,7 @@
             <div>
                 <h1>Machine Checklist</h1>
                 <p class="muted">Machine ID: {{ machine_id }}</p>
+                {% include "partials/navbar.html" %}
             </div>
 
             <form action="/logout" method="POST">

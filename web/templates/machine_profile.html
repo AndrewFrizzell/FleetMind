@@ -11,13 +11,12 @@
     <div class="container">
 
         <div class="header">
+            
             <div>
                 <h1>{{ machine.make }} {{ machine.model }}</h1>
                 <p class="muted">{{ machine.type }} | {{ machine.serial_number }}</p>
+                {% include "partials/navbar.html" %}
             </div>
-            <form method="POST" action="/logout">
-                <button type="submit" class="danger">Logout</button>
-            </form>
         </div>
     
 

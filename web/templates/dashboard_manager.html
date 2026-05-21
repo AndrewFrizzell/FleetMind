@@ -9,20 +9,7 @@
         <div class="container">
             <div class="card">
                 <h1>Equipment Manager Dashboard</h1>
-                <p>logged in as: {{ user.name }} ({{ user.role }})</p>
-                <form method="POST" action="/logout">
-                    <button type="submit">Logout</button>
-                </form>
-            </div>
-            <!--"tabs"-->
-            <div class="card">
-                <nav>
-                    <a href="/dashboard">Overview</a>
-                    <a href="#" onclick="return false">Work Orders</a>
-                    <a href="#" onclick="return false">Mechanics</a>
-                    <a href="#" onclick="return false">Inspections</a>
-                    <a href="{{ url_for('dashboard') }}">Dashboard</a>
-                </nav>
+                {% include "partials/navbar.html" %}
             </div>
            
             <div class="card">

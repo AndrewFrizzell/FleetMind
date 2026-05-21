@@ -7,8 +7,7 @@
     </head>
     <body>
         <h1>Equipment Manager Dashboard</h1>
-        <p>logged in as: {{ user.name }} ({{ user.role }})</p>
-
+        {% include "partials/navbar.html" %}
         <form method="POST" action="/logout">
             <button type="submit">Logout</button>
         </form>

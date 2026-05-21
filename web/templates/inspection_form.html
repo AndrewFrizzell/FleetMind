@@ -11,14 +11,8 @@
         <div class="header">
             <div>
                 <h1>New Inspection</h1>
-                <p class="muted">
-                    logged in as {{ user.name }} ({{ user.role }})
-                </p>
+               {% include "partials/navbar.html" %}
             </div>
-
-            <form method="POST" action="/logout">
-                <button type="submit" class="danger">Logout</button>
-            </form>
         </div>
 
         <div class="card">
@@ -42,14 +36,14 @@
                             <td>{{ item.description }}</td>
                             <td>
                                 <input type="radio"
-                                        name="item_{{ item.item_id }}"
+                                        name="item_{{ item.master_item_id }}"
                                         value="pass"
                                         required
                                         >
                             </td>
                             <td>
                                 <input type="radio"
-                                        name="item_{{ item.item_id }}"
+                                        name="item_{{ item.master_item_id }}"
                                         value="fail"
                                         >
                             </td>
