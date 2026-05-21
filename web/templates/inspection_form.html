@@ -24,19 +24,8 @@
         <div class="card">
             <form method="POST">
 
-                <label><strong>Machine</strong></label>
-                <select name="machine_id" required>
-                    <option value="">--- Select Machine ---</option>
-
-                    {% for m in machines %}
-                        <option value="{{ m.machine_id }}">
-                            {{ m.serial_number }} - {{ m.make }} {{ m.model }}
-                        </option>
-                    {% endfor %}
-                </select>
-
-                <br><br>
-
+                <h2>{{ machine.make }} {{ machine.model }}</h2>
+                <p class="muted">Serial: {{ machine.serial_number }}</p>
                 <h2>Checklist</h2>
 
                 <table>

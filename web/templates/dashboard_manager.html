@@ -22,7 +22,6 @@
                     <a href="#" onclick="return false">Mechanics</a>
                     <a href="#" onclick="return false">Inspections</a>
                     <a href="{{ url_for('dashboard') }}">Dashboard</a>
-                    <a href="{{ url_for('new_inspection') }}"></a>
                 </nav>
             </div>
            
@@ -109,6 +108,7 @@
                                 <th>Status</th>
                                 <th>Job</th>
                                 <th>Checklist</th>
+                                <th>Profile</th>
                             </tr>
 
                             {% for m in machines %}
@@ -130,6 +130,11 @@
                                     <td>
                                         <a href="{{ url_for('manage_machine_checklist', machine_id=m[0]) }}">
                                             Manage Checklist
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('machine_profile', machine_id=m[0]) }}">
+                                            View Profile
                                         </a>
                                     </td>
                                 </tr>

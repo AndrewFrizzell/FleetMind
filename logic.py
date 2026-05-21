@@ -414,7 +414,65 @@ def get_all_machines(conn, include_inactive=True):
 
     return cur.fetchall()
         
+def get_machine_by_id(conn, machine_id):
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT
+            m.machine_id,
+            m.serial_number,
+            m.type,
+            m.make,
+            m.model,
+            m.year,
+            m.status,
+            m.operational_state,
+            m.current_job_id,
+            j.name AS job_name,
+            j.location AS job_location
+        FROM machine m
+        LEFT JOIN Job j ON m.current_job_id = j.job_id
+        WHERE m.machine_id = ?
+    """, (machine_id,))
+    return cur.fetchone()
 
+def get_open_work_orders_for_machine(conn, machine_id):
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT
+            wo.work_order_id,
+            wo.status,
+            wo.priority,
+            wo.created_at,
+            wo.completed_at,
+            wo.notes,
+            u.name AS assigned_to_name
+        FROM WorkOrder wo
+        LEFT JOIN User u
+            ON wo.assigned_to = u.user_id
+        WHERE wo.machine_id = ?
+            AND wo.status != 'closed'
+        ORDER BY wo.priority DESC, wo.created_at ASC
+    """, (machine_id,))
+
+    return cur.fetchall()
+
+def get_recent_inspections_for_machine(conn, machine_id):
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT 
+            i.inspection_id,
+            i.inspection_date,
+            i.passed,
+            i.notes,
+            u.name AS operator_name
+        FROM Inspections i 
+        JOIN User u ON i.operator_id = u.user_id
+        WHERE i.machine_id = ?
+        ORDER BY i.inspection_date DESC
+        LIMIT 10
+    """, (machine_id,))
+    return cur.fetchall()
 
 
 #==============================================

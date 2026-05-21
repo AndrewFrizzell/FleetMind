@@ -20,6 +20,9 @@ from logic import (
             get_machine_checklist,
             add_item_to_machine_checklist,
             remove_item_from_machine_checklist,
+            get_machine_by_id,
+            get_open_work_orders_for_machine,
+            get_recent_inspections_for_machine
 
 )
 
@@ -199,21 +202,26 @@ def mechanic_complete_work_order():
         conn.close()
     return redirect(url_for("dashboard"))
 
-@app.route("/inspection/new", methods=["GET", "POST"])
+@app.route("/machines/<int:machine_id>/inspect", methods=["GET", "POST"])
 @login_required
-def new_inspection():
+def new_inspection(machine_id):
     conn = get_connection()
 
-    if request.method == "POST":
-        machine_id = int(request.form.get("machine_id"))
-        notes = request.form.get("notes") or ""
+    machine = get_machine_by_id(conn, machine_id)
 
-        checklist_items = get_active_checklist_items(conn)
+    if machine is None:
+        conn.close()
+        return "Machine not found", 404
+
+    checklist_items = get_machine_checklist(conn, machine_id)
+
+    if request.method == "POST":
+        notes = request.form.get("notes") or ""
 
         results = {}
 
         for item in checklist_items:
-            field_name = f"item_{item['item_id']}"
+            field_name = f"item_{item['master_item_id']}"
             passed_value = request.form.get(field_name)
 
             results[item["name"]] = passed_value == "pass"
@@ -228,15 +236,14 @@ def new_inspection():
 
         conn.close()
         flash("Inspection submitted.")
-        return redirect(url_for("dashboard"))
-    
-    machines = get_all_machines(conn, include_inactive=False)
-    checklist_items = get_active_checklist_items(conn)
+        return redirect(url_for("machine_profile", machine_id=machine_id))
+
+    conn.close()
 
     return render_template(
         "inspection_form.html",
         user=session,
-        machines=machines,
+        machine=machine,
         checklist_items=checklist_items
     )
 
@@ -288,6 +295,32 @@ def remove_machine_checklist_item():
     conn.close()
 
     return redirect(url_for("manage_machine_checklist", machine_id=int(machine_id)))
+
+@app.route("/machines/<int:machine_id>")
+@login_required
+def machine_profile(machine_id):
+
+    conn = get_connection()
+
+    machine = get_machine_by_id(conn, machine_id)
+
+    if machine is None:
+        conn.close()
+        return "Machine not found", 404
+    
+    open_work_orders = get_open_work_orders_for_machine(conn, machine_id)
+    recent_inspections = get_recent_inspections_for_machine(conn, machine_id)
+    machine_checklist = get_machine_checklist(conn, machine_id)
+    conn.close()
+
+    return render_template(
+        "machine_profile.html",
+        user=session,
+        machine=machine,
+        open_work_orders=open_work_orders,
+        recent_inspections=recent_inspections,
+        machine_checklist=machine_checklist
+    )
 
 if __name__ == "__main__":
     #run from /web with python app.py
