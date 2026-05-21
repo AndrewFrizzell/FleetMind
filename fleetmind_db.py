@@ -65,6 +65,20 @@ def create_tables(conn):
     );
     """)
 
+    #machine-specific checklist items
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS MachineCheckListItem (
+        machine_checklist_item_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        machine_id INTEGER NOT NULL,
+        master_item_id INTEGER NOT NULL,
+        required INTEGER NOT NULL DEFAULT 1,
+        active INTEGER NOT NULL DEFAULT 1,
+        FOREIGN KEY (machine_id) REFERENCES Machine(machine_id),
+        FOREIGN KEY (master_item_id) REFERENCES MasterChecklistItem(item_id),
+        UNIQUE(machine_id, master_item_id)
+    );
+    """)
+
     # Checklist template
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS ChecklistTemplate (

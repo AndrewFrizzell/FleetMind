@@ -15,7 +15,12 @@ from logic import (
             get_work_orders_for_assignment,
             complete_work_order,
             get_active_checklist_items,
-            create_inspection
+            create_inspection,
+            get_master_checklist_items,
+            get_machine_checklist,
+            add_item_to_machine_checklist,
+            remove_item_from_machine_checklist,
+
 )
 
 app = Flask(__name__)
@@ -234,6 +239,55 @@ def new_inspection():
         machines=machines,
         checklist_items=checklist_items
     )
+
+@app.route("/manager/machines/<int:machine_id>/checklist", methods=["GET"])
+@login_required
+def manage_machine_checklist(machine_id):
+    if session.get("role") != "equipment_manager":
+        return "Forbidden", 403
+    
+    conn = get_connection()
+
+    master_items = get_master_checklist_items(conn)
+    machine_items = get_machine_checklist(conn, machine_id)
+
+    conn.close()
+
+    return render_template(
+        "machine_checklist.html",
+        user=session,
+        machine_id=machine_id,
+        master_items=master_items,
+        machine_items=machine_items
+    )
+
+@app.route("/manager/machines/<int:machine_id>/checklist/add", methods=["POST"])
+@login_required
+def add_machine_checklist_item(machine_id):
+    if session.get("role") != "equipment_manager":
+        return "Forbidden", 403
+
+    master_item_id = request.form.get("master_item_id")
+
+    conn = get_connection()
+    add_item_to_machine_checklist(conn, machine_id, int(master_item_id))
+
+    return redirect(url_for("manage_machine_checklist", machine_id=machine_id))
+
+@app.route("/manager/machine-checklist/remove", methods=["POST"])
+@login_required
+def remove_machine_checklist_item():
+    if session.get("role") != "equipment_manager":
+        return "Forbidden", 403
+    
+    machine_checklist_item_id = request.form.get("machine_checklist_item_id")
+    machine_id = request.form.get("machine_id")
+
+    conn = get_connection()
+    remove_item_from_machine_checklist(conn, int(machine_checklist_item_id))
+    conn.close()
+
+    return redirect(url_for("manage_machine_checklist", machine_id=int(machine_id)))
 
 if __name__ == "__main__":
     #run from /web with python app.py

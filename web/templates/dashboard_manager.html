@@ -108,6 +108,7 @@
                                 <th>Year</th>
                                 <th>Status</th>
                                 <th>Job</th>
+                                <th>Checklist</th>
                             </tr>
 
                             {% for m in machines %}
@@ -125,6 +126,11 @@
                                         {% else %}
                                             Unassigned
                                         {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('manage_machine_checklist', machine_id=m[0]) }}">
+                                            Manage Checklist
+                                        </a>
                                     </td>
                                 </tr>
                             {% endfor %}

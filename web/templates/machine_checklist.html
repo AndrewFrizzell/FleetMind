@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Machine Checklist</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+
+<body>
+    <div class="container">
+
+        <div class="header">
+            <div>
+                <h1>Machine Checklist</h1>
+                <p class="muted">Machine ID: {{ machine_id }}</p>
+            </div>
+
+            <form action="/logout" method="POST">
+                <button type="submit" class="danger">Logout</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <a href="{{ url_for('dashboard') }}">Back to Dashboard</a>
+        </div>
+
+        <div class="card">
+            <h2>Add Chacklist Item</h2>
+
+            <form method="POST" action="{{ url_for('add_machine_checklist_item', machine_id=machine_id) }}">
+                <select name="master_item_id" required>
+                    <option value="">---Select Item---</option>
+
+                    {% for item in master_items %}
+                        <option value="{{ item.item_id }}">
+                            {{ item.name }} - {{ item.description }}
+                        </option>
+                    {% endfor %}
+                </select>
+
+                <button type="submit" class="primary">Add Item</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2>Current Machine Checklist</h2>
+
+            {% if machine_items|length > 0 %}
+                <table>
+                    <tr>
+                        <th>Item</th>
+                        <th>Description</th>
+                        <th>Required</th>
+                        <th>Action</th>
+                    </tr>
+
+                    {% for item in machine_items %}
+                        <tr>
+                            <td>{{ item["name"] }}</td>
+                            <td>{{ item["description"] }}</td>
+                            <td>{{ "Yes" if item["required"] == 1 else "No" }}</td>
+                            <td>
+                                <form method="POST" action="{{ url_for('remove_machine_checklist_item') }}">
+                                    <input type="hidden" name="machine_checklist_item_id" value="{{ item['machine_checklist_item_id'] }}">
+                                    <input type="hidden" name="machine_id" value="{{ machine_id }}">
+                                    <button type="submit" class="danger">Remove</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            {% else %}
+                <p>No checklist items assigned to this machine yet.</p>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

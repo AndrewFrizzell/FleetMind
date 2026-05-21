@@ -49,6 +49,66 @@ def get_active_checklist_items(conn):
     """)
     return cur.fetchall()
 
+def get_master_checklist_items(conn):
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT item_id, name, description, active
+        FROM MasterChecklistItem
+        WHERE active = 1
+        ORDER BY name ASC
+    """)
+    return cur.fetchall()
+
+def get_machine_checklist(conn, machine_id):
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT
+            mci.machine_checklist_item_id,
+            mci.machine_id,
+            mci.master_item_id,
+            mci.required,
+            mci.active,
+            mci_item.name,
+            mci_item.description
+        FROM MachineChecklistItem mci
+        JOIN MasterChecklistItem mci_item
+            ON mci.master_item_id = mci_item.item_id
+        WHERE mci.machine_id = ?
+            AND mci.active = 1
+        ORDER BY mci_item.name ASC
+    """, (machine_id,))
+    return cur.fetchall()
+
+def add_item_to_machine_checklist(conn, machine_id, master_item_id):
+    cur = conn.cursor()
+    cur.execute("""
+        INSERT OR IGNORE INTO MachineChecklistItem (
+            machine_id,
+            master_item_id,
+            required,
+            active        
+        )
+        VALUES (?, ?, 1, 1)
+    """, (machine_id, master_item_id))
+
+    cur.execute("""
+        UPDATE MachineChecklistItem
+        SET active = 1
+        WHERE machine_id = ?
+            AND master_item_id = ?
+    """, (machine_id, master_item_id))
+    conn.commit()
+
+def remove_item_from_machine_checklist(conn, machine_checklist_item_id):
+    cur = conn.cursor()
+    cur.execute("""
+        UPDATE MachineChecklistItem
+        SET active = 0
+        WHERE machine_checklist_item_id = ?
+    """, (machine_checklist_item_id,))
+    conn.commit()
+
+
 #======================================
 # work orders
 #======================================
