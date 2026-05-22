@@ -398,6 +398,8 @@ def add_machine():
         
     return render_template("add_machine.html", user=session)
 
+@app.route()
+
 if __name__ == "__main__":
     #run from /web with python app.py
     app.run(debug=True)
