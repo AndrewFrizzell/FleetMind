@@ -2,6 +2,55 @@
 #inspections
 #=====================================
 
+#get all inspections
+def get_all_inspections(conn):
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT
+            i.inspection_id,
+            i.machine_id,
+            i.inspection_date,
+            i.passed,
+            i.notes,
+            u.name AS operator_name,
+            m.serial_number,
+            m.type,
+            m.make,
+            m.model
+        FROM Inspections i 
+        JOIN User u
+            ON i.operator_id = u.user_id
+        JOIN Machine m
+            ON i.machine_id = m.machine_id
+        ORDER BY i.inspection_date DESC
+    """)
+
+    return cur.fetchall()
+
+def get_inspections_by_user(conn, user_id):
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT 
+            i.inspection_id,
+            i.machine_id,
+            i.inspection_date,
+            i.passed,
+            i.notes,
+            m.serial_number,
+            m.type,
+            m.make,
+            m.model
+        FROM Inspections i
+        JOIN Machine m
+            ON i.machine_id = m.machine_id
+        WHERE i.operator_id = ?
+        ORDER BY i.inspection_date DESC
+    """, (user_id,))
+
+    return cur.fetchall()
+
 #creates inspections 
 def create_inspection(conn, machine_id, operator_id, results, notes=""):
     cursor = conn.cursor()

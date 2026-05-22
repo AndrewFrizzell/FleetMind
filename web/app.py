@@ -22,7 +22,9 @@ from logic import (
             remove_item_from_machine_checklist,
             get_machine_by_id,
             get_open_work_orders_for_machine,
-            get_recent_inspections_for_machine
+            get_recent_inspections_for_machine,
+            get_inspections_by_user,
+            get_all_inspections
 
 )
 
@@ -320,6 +322,37 @@ def machine_profile(machine_id):
         open_work_orders=open_work_orders,
         recent_inspections=recent_inspections,
         machine_checklist=machine_checklist
+    )
+
+@app.route("/machines")
+@login_required
+def machines():
+    conn = get_connection()
+    machines = get_all_machines(conn)
+    conn.close()
+
+    return render_template(
+        "machines.html",
+        user=session,
+        machines=machines
+    )
+
+@app.route("/inspections")
+@login_required
+def inspections():
+    conn = get_connection()
+
+    if session.get("role") == "operator":
+        inspection = get_inspections_by_user(conn, session["user_id"])
+    else:
+        inspections = get_all_inspections(conn)
+
+    conn.close()
+
+    return render_template(
+        "inspections.html",
+        user=session,
+        inspections=inspections
     )
 
 if __name__ == "__main__":

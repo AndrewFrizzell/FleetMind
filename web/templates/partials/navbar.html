@@ -1,7 +1,8 @@
 <div class="topar">
     <div class="nav-left">
         <a href="{{ url_for('dashboard') }}">Dashboard</a>
-        <a href="{{ url_for('dashboard') }}">Machines</a>
+        <a href="{{ url_for('machines') }}">Machines</a>
+        <a href="{{ url_for('inspections') }}">Inspections</a>
         {% if user.role == "equipment_manager" %}
             <a href="#">Work Orders</a>
             <a href="#">Mechanics</a>
@@ -10,7 +11,8 @@
 
     <div class="nav-right">
         <span class="muted">{{ user.name }} ({{ user.role }})</span>
-        <form method="POST" action="/logout"></form>
+        <form method="POST" action="/logout">
             <button type="submit" class="danger">Logout</button>
+        </form>
     </div>
 </div>

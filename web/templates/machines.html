@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h2>Machines</h2>
+             {% include "partials/navbar.html" %}
+        </div>
+        <div class="card">              
+            {% if machines and machines|length > 0 %}
+                <table>
+                    <tr>
+                        <th>ID</th>
+                        <th>Serial</th>
+                        <th>Type</th>
+                        <th>Make</th>
+                        <th>Model</th>
+                        <th>Year</th>
+                        <th>Status</th>
+                        <th>Job</th>
+                        <th>Checklist</th>
+                        <th>Profile</th>
+                    </tr>
+
+                    {% for m in machines %}
+                        <tr>
+                            <td>{{ m[0] }}</td>
+                            <td>{{ m[1] }}</td>
+                            <td>{{ m[2] }}</td>
+                            <td>{{ m[3] }}</td>
+                            <td>{{ m[4] }}</td>
+                            <td>{{ m[5] }}</td>
+                            <td>{{ m[6] }}</td>
+                            <td>
+                                {% if m[8] %}
+                                    {{ m[8] }}
+                                {% else %}
+                                    Unassigned
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('manage_machine_checklist', machine_id=m[0]) }}">
+                                    Manage Checklist
+                                </a>
+                            </td>
+                            <td>
+                                <a href="{{ url_for('machine_profile', machine_id=m[0]) }}">
+                                    View Profile
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            {% else %}
+                <p>No machines found.</p>
+            {% endif %} 
+        </div>
+    </div>
+</body>
+</html>
