@@ -387,6 +387,34 @@ def complete_work_order(conn, work_order_id):
 # machines
 #===================================   
 
+#add machine
+def create_machine(conn, serial_number, machine_type, make="", model="", year=None, status="active", current_job_id=None):
+    cur = conn.cursor()
+
+    cur.execute("""
+        INSERT INTO Machine (
+            serial_number,
+            type,
+            make,
+            model,
+            year,
+            status,
+            current_job_id
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    """, (
+        serial_number,
+        machine_type,
+        make,
+        model,
+        year,
+        status,
+        current_job_id
+    ))
+
+    conn.commit()
+    return cur.lastrowid
+
 #move machine to job
 def move_machine_to_job(conn, machine_id, new_job_id):
     cursor = conn.cursor()

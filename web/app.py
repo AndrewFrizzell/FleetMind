@@ -24,7 +24,8 @@ from logic import (
             get_open_work_orders_for_machine,
             get_recent_inspections_for_machine,
             get_inspections_by_user,
-            get_all_inspections
+            get_all_inspections,
+            create_machine
 
 )
 
@@ -354,6 +355,48 @@ def inspections():
         user=session,
         inspections=inspections
     )
+
+@app.route("/manager/machines/add", methods=["GET", "POST"])
+@login_required
+def add_machine():
+    if session.get("role") != "equipment_manager":
+        return "Forbidden", 403
+    if request.method == "POST":
+        serial_number = request.form.get("serial_number") or ""
+        machine_type = request.form.get("type") or ""
+        make = request.form.get("make") or ""
+        model = request.form.get("model") or ""
+        year = request.form.get("year") or None
+        status = request.form.get("status") or "active"
+
+        if year:
+            year = int(year)
+        
+        conn = get_connection()
+
+        try:
+            machine_id = create_machine(
+                conn,
+                serial_number.strip(),
+                machine_type.strip(),
+                make.strip(),
+                model.strip(),
+                year,
+                status
+            )
+            flash("Machine added.")
+            return redirect(url_for("machine_profile", machine_id=machine_id))
+        
+        except Exception as e:
+            conn.rollback()
+            print("Add MACHINE ERROR", e)
+            flash(f"Error adding machine: {e}")
+            return redirect(url_for("add_machine"))
+        
+        finally:
+            conn.close()
+        
+    return render_template("add_machine.html", user=session)
 
 if __name__ == "__main__":
     #run from /web with python app.py
