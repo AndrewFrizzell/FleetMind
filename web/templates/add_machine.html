@@ -14,8 +14,20 @@
 
         <div class="card">
             <form method="POST">
+                <label><strong>Unit Number</strong></label>
+                <input type="text" name="unit_number" placeholder="52102" required>
+                <br><br>
+
+                <label><strong>Department</strong></label>
+                <input type="text" name="department" placeholder="STREETS, PARKS, SOLID WASTE" required>
+                <br><br>
+
                 <label><strong>Serial Number</strong></label><br>
                 <input type="text" name="serial_number" required>
+                <br><br>
+
+                <label><strong>VIN</strong></label>
+                <input type="text" placeholder="17-digit VIN if applicable" name="vin_number">
                 <br><br>
 
                 <label><strong>Type</strong></label><br>
@@ -32,6 +44,18 @@
 
                 <label><strong>Year</strong></label><br>
                 <input type="number" name="year" min="1900" max="2100">
+                <br><br>
+
+                <label><strong>Meter Type</strong></label>
+                <select name="meter_type" required>
+                    <option value="hours">Hours</option>
+                    <option value="miles">Miles</option>
+                </select>
+                <br>
+
+                <p class="muted">
+                    Meter reading will automatically update after the first inspection is completed.
+                </p>
                 <br><br>
 
                 <label><strong>Status</strong></label><br>

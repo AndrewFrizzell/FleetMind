@@ -13,17 +13,19 @@
         <div class="header">
             
             <div>
-                <h1>{{ machine.make }} {{ machine.model }}</h1>
-                <p class="muted">{{ machine.type }} | {{ machine.serial_number }}</p>
+                <h1>Machine Profile</h1>
                 {% include "partials/navbar.html" %}
+                <h1>{{ machine.make }} {{ machine.model }}</h1>
+                <p class="muted">{{ machine.type }} | {{ machine.serial_number }}</p>  
             </div>
         </div>
     
 
         <div class="card">
             <h2>Machine Info</h2>
-            <p><strong>ID:</strong> {{ machine.machine_id }}</p>
+            <p><strong>ID:</strong> {{ machine.unit_number }}</p>
             <p><strong>Year:</strong> {{ machine.year }}</p>
+            <p><strong>VIN:</strong> {{ machine.vin_number or "N/A" }}</p>
             <p><strong>Status:</strong> {{ machine.status }}</p>
             <p><strong>Operational State</strong> {{ machine.operational_state }}</p>
         

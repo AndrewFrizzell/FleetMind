@@ -25,7 +25,8 @@ from logic import (
             get_recent_inspections_for_machine,
             get_inspections_by_user,
             get_all_inspections,
-            create_machine
+            create_machine,
+            get_all_work_orders
 
 )
 
@@ -361,29 +362,43 @@ def inspections():
 def add_machine():
     if session.get("role") != "equipment_manager":
         return "Forbidden", 403
+    
     if request.method == "POST":
+        unit_number = request.form.get("unit_number") or ""
+        department = request.form.get("department") or ""
         serial_number = request.form.get("serial_number") or ""
+        vin_number = request.form.get("vin_number") or ""
         machine_type = request.form.get("type") or ""
         make = request.form.get("make") or ""
         model = request.form.get("model") or ""
         year = request.form.get("year") or None
+        meter_type = request.form.get("meter_type") or "hours"
+        current_meter_reading = request.form.get("current_meter_reading") or 0
         status = request.form.get("status") or "active"
 
         if year:
             year = int(year)
         
+        current_meter_reading = float(current_meter_reading)
+        
         conn = get_connection()
 
         try:
             machine_id = create_machine(
-                conn,
-                serial_number.strip(),
-                machine_type.strip(),
-                make.strip(),
-                model.strip(),
-                year,
-                status
-            )
+                    conn,
+                    unit_number=unit_number,
+                    department=department,
+                    serial_number=serial_number,
+                    vin_number=vin_number,
+                    machine_type=machine_type,
+                    make=make,
+                    model=model,
+                    year=year,
+                    meter_type=meter_type,
+                    current_meter_reading=current_meter_reading,
+                    status=status
+                )
+            
             flash("Machine added.")
             return redirect(url_for("machine_profile", machine_id=machine_id))
         
@@ -398,7 +413,29 @@ def add_machine():
         
     return render_template("add_machine.html", user=session)
 
-@app.route()
+@app.route("/manager/work-orders")
+@login_required
+def manager_work_orders():
+
+    if session.get("role") != "equipment_manager":
+        flash("you do not have permission to view that page.")
+        return redirect(url_for("dashboard"))
+    
+    conn= get_connection()
+
+    try:
+        work_orders = get_all_work_orders(conn)
+
+        return render_template(
+            "work_orders.html",
+            work_orders=work_orders,
+            role=session.get("role")
+        )
+    
+    finally:
+        conn.close()
+
+
 
 if __name__ == "__main__":
     #run from /web with python app.py

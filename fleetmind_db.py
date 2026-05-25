@@ -41,14 +41,23 @@ def create_tables(conn):
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS Machine (
         machine_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        serial_number TEXT UNIQUE NOT NULL,
+        unit_number TEXT UNIQUE NOT NULL,
+        department TEXT NOT NULL,
+        serial_number TEXT UNIQUE,
+        vin_number TEXT UNIQUE,
         type TEXT NOT NULL,
         make TEXT,
         model TEXT,
         year INTEGER,
+        meter_type TEXT NOT NULL
+            CHECK (meter_type IN ('miles', 'hours')),
+        current_meter_reading REAL NOT NULL DEFAULT 0,
         status TEXT NOT NULL CHECK (status IN ('active', 'inactive', 'out_of_service')),
         operational_state TEXT NOT NULL DEFAULT 'running'
-            CHECK (operational_state IN ('running', 'down')),
+            CHECK (operational_state IN ('running',
+                                        'running_with_faults',
+                                        'down')),
+        photo_url TEXT,
         current_job_id INTEGER,
         active INTEGER NOT NULL DEFAULT 1,
         FOREIGN KEY (current_job_id) REFERENCES Job(job_id)
@@ -67,7 +76,7 @@ def create_tables(conn):
 
     #machine-specific checklist items
     cursor.execute("""
-    CREATE TABLE IF NOT EXISTS MachineCheckListItem (
+    CREATE TABLE IF NOT EXISTS MachineChecklistItem (
         machine_checklist_item_id INTEGER PRIMARY KEY AUTOINCREMENT,
         machine_id INTEGER NOT NULL,
         master_item_id INTEGER NOT NULL,

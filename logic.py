@@ -92,7 +92,7 @@ def get_active_checklist_items(conn):
     cur = conn.cursor()
     cur.execute("""
         SELECT item_id, name, description
-        FROM MasterCheckListItem
+        FROM MasterChecklistItem
         WHERE active = 1
         ORDER BY item_id ASC
     """)
@@ -265,6 +265,37 @@ def get_work_orders_for_jobs(conn, job_id, include_completed=False):
     cursor.execute(base_sql, params)
     return cursor.fetchall()
 
+def get_all_work_orders(conn): 
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT
+            wo.work_order_id,
+            wo.assigned_to,
+            wo.notes,
+            wo.status,
+            wo.priority,
+            wo.created_at,
+            wo.assigned_to,
+            
+            m.serial_number,
+            m.type,
+            m.make,
+            m.model,
+                   
+            u.name AS mechanic_name
+                   
+        FROM WorkOrder wo
+        JOIN Machine m
+            ON wo.machine_id = m.machine_id
+        LEFT JOIN User u
+            ON wo.assigned_to = u.user_id
+                   
+        ORDER BY wo.created_at DESC
+    """)
+
+    return cursor.fetchall()
+
     
 
 
@@ -388,27 +419,60 @@ def complete_work_order(conn, work_order_id):
 #===================================   
 
 #add machine
-def create_machine(conn, serial_number, machine_type, make="", model="", year=None, status="active", current_job_id=None):
+def create_machine(conn,
+                    unit_number,
+                    department,
+                    serial_number, 
+                    vin_number,
+                    machine_type, 
+                    make="", 
+                    model="", 
+                    year=None,
+                    meter_type="hours",
+                    current_meter_reading=0, 
+                    status="active", 
+                    current_job_id=None,
+                    photo_url=None
+                    ):
     cur = conn.cursor()
+
+    unit_number = (unit_number or "").strip().upper()
+    serial_number = (serial_number or "").strip().upper()
+    machine_type = (machine_type or "").strip().upper()
+    make = (make or "").strip().upper()
+    model = (model or "").strip().upper()
+
 
     cur.execute("""
         INSERT INTO Machine (
+            unit_number,
+            department,
             serial_number,
+            vin_number,
             type,
             make,
             model,
             year,
+            meter_type,
+            current_meter_reading,
             status,
+            photo_url,
             current_job_id
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
+        unit_number,
+        department,
         serial_number,
+        vin_number,
         machine_type,
         make,
         model,
         year,
+        meter_type,
+        current_meter_reading,
         status,
+        photo_url,
         current_job_id
     ))
 
@@ -459,12 +523,19 @@ def get_all_machines(conn, include_inactive=True):
         cur.execute("""
             SELECT
                 m.machine_id,
+                m.unit_number,
+                m.department,
                 m.serial_number,
+                m.vin_number,
                 m.type,
                 m.make,
                 m.model,
                 m.year,
+                m.meter_type,
+                m.current_meter_reading,
                 m.status,
+                m.operational_state,
+                m.photo_url,
                 m.current_job_id,
                 j.name
             FROM Machine m
@@ -475,12 +546,18 @@ def get_all_machines(conn, include_inactive=True):
         cur.execute("""
             SELECT
                 m.machine_id,
+                m.unit_number,
+                m.department,
                 m.serial_number,
                 m.type,
                 m.make,
                 m.model,
                 m.year,
+                m.meter_type,
+                m.current_meter_reading,
                 m.status,
+                m.operational_state,
+                m.photo_url
                 m.current_job_id,
                 j.name
             FROM Machine m
@@ -496,6 +573,8 @@ def get_machine_by_id(conn, machine_id):
     cur.execute("""
         SELECT
             m.machine_id,
+            m.vin_number,
+            m.unit_number,
             m.serial_number,
             m.type,
             m.make,

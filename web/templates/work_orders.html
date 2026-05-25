@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Work Orders</title>
+</head>
+<body>
+    <div class="contianer">
+         <div class="card">
+            {% include "partials/navbar.html" %}
+            <h1>Work Orders</h1>
+        </div>
+        <h1>Work Orders</h1>
+    </div>
+
+    <div class="card">
+
+    {% if work_orders %}
+
+        {% for wo in work_orders %}
+
+        <div class="work-order-card">
+
+            <div class="work-order-top">
+
+                <div>
+                    <h3>
+                        WO #{{ wo.work_order_id }}
+                    </h3>
+
+                    <p>
+                        {{ wo.serial_number }}
+                        -
+                        {{ wo.make }} {{ wo.model }}
+                    </p>
+                </div>
+
+                <div>
+                    <span class="status-badge">
+                        {{ wo.status }}
+                    </span>
+                </div>
+
+            </div>
+
+            <hr>
+
+            <p>
+                <strong>Notes:</strong><br>
+                {{ wo.notes }}
+            </p>
+
+            <p>
+                <strong>Priority:</strong>
+                {{ wo.priority }}
+            </p>
+
+            <p>
+                <strong>Assigned Mechanic:</strong>
+
+                {% if wo.mechanic_name %}
+                    {{ wo.mechanic_name }}
+                {% else %}
+                    Unassigned
+                {% endif %}
+            </p>
+
+            <p>
+                <strong>Created:</strong>
+                {{ wo.created_at }}
+            </p>
+
+        </div>
+
+        <br>
+
+        {% endfor %}
+
+    {% else %}
+
+        <p>No work orders found.</p>
+
+    {% endif %}
+
+</div>
+</body>
+</html>
