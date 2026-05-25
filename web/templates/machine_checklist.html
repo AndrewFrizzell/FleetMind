@@ -30,17 +30,35 @@
             <h2>Add Chacklist Item</h2>
 
             <form method="POST" action="{{ url_for('add_machine_checklist_item', machine_id=machine_id) }}">
-                <select name="master_item_id" required>
-                    <option value="">---Select Item---</option>
+                <h3>Select Items for Checklist</h3>
 
                     {% for item in master_items %}
-                        <option value="{{ item.item_id }}">
-                            {{ item.name }} - {{ item.description }}
-                        </option>
+                        <label style="display:block; margin-bottom:8px;">
+                            <input type="checkbox" name="master_item_ids" value="{{ item.item_id }}">
+                            {{ item.name }}
+                            {% if item.description %}
+                                -{{ item.description }}
+                            {% endif %}
+                        </label>
                     {% endfor %}
-                </select>
 
-                <button type="submit" class="primary">Add Item</button>
+                    <hr>
+
+                    <h3>Add New Item</h3>
+                    <input type="text"
+                            name="new_item_name"
+                            placeholder="New checklist item name"
+                        >
+                    
+                    <input type="text"
+                            name="new_item_description" 
+                            placeholder="Description optional"
+                        >
+                    
+                    <br><br>
+          
+
+                <button type="submit" class="primary">Save Checklist Items</button>
             </form>
         </div>
 

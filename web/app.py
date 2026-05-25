@@ -26,7 +26,8 @@ from logic import (
             get_inspections_by_user,
             get_all_inspections,
             create_machine,
-            get_all_work_orders
+            get_all_work_orders,
+            create_master_checklist_item
 
 )
 
@@ -278,10 +279,29 @@ def add_machine_checklist_item(machine_id):
     if session.get("role") != "equipment_manager":
         return "Forbidden", 403
 
-    master_item_id = request.form.get("master_item_id")
+    selected_item_ids = request.form.getlist("master_item_ids")
+    new_item_name = request.form.get("new_item_name", "").strip()
+    new_item_description = request.form.get("new_item_description", "").strip()
 
     conn = get_connection()
-    add_item_to_machine_checklist(conn, machine_id, int(master_item_id))
+
+    for item_id in selected_item_ids:
+        add_item_to_machine_checklist(conn, machine_id, int(item_id))
+    
+    if new_item_name:
+        new_master_item= create_master_checklist_item(
+            conn,
+            new_item_name,
+            new_item_description
+        )
+        add_item_to_machine_checklist(
+            conn,
+            machine_id,
+            new_master_item["item_id"]
+        )
+    
+    conn.close()
+
 
     return redirect(url_for("manage_machine_checklist", machine_id=machine_id))
 

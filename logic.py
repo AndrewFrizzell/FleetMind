@@ -108,6 +108,23 @@ def get_master_checklist_items(conn):
     """)
     return cur.fetchall()
 
+def create_master_checklist_item(conn, name, description=None):
+    cur = conn.cursor()
+    cur.execute("""
+        INSERT OR IGNORE INTO MasterChecklistItem(name, description)
+        VALUES (?, ?)
+    """,(name, description))
+
+    conn.commit()
+
+    cur.execute("""
+        SELECT item_id
+        FROM MasterChecklistItem
+        WHERE name = ?
+    """, (name,))
+
+    return cur.fetchone()
+
 def get_machine_checklist(conn, machine_id):
     cur = conn.cursor()
     cur.execute("""
