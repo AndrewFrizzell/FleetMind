@@ -27,7 +27,13 @@ from logic import (
             get_all_inspections,
             create_machine,
             get_all_work_orders,
-            create_master_checklist_item
+            create_master_checklist_item,
+            get_open_inspection_for_machine,
+            create_open_inspection,
+            save_inspection_items,
+            close_inspection,
+            update_machine_meter,
+            get_machine_current_meter
 
 )
 
@@ -198,10 +204,22 @@ def mechanic_complete_work_order():
     conn = get_connection()
 
     try:
+        print("completing work order:", work_order_id)
         complete_work_order(conn, int(work_order_id))
+
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT work_order_id, status, completed_at
+            FROM WorkOrder
+            WHERE work_order_id = ?
+        """, (int(work_order_id),))
+
+        print("AFTER COMPLETE:", dict(cur.fetchone()))
+
         flash(f"Work order #{work_order_id} completed.")
     except Exception as e:
         conn.rollback()
+        print("error completing work order:", e)
         flash(f"Error: {e}")
     finally:
         conn.close()
@@ -220,8 +238,59 @@ def new_inspection(machine_id):
 
     checklist_items = get_machine_checklist(conn, machine_id)
 
+    existing_inspection = get_open_inspection_for_machine(conn, machine_id)
+
+    if existing_inspection:
+        if existing_inspection["operator_id"] != session["user_id"]:
+            conn.close()
+            return "This machine already has an open inspection by another operator."
+
     if request.method == "POST":
         notes = request.form.get("notes") or ""
+
+        meter_row = get_machine_current_meter(conn, machine_id)
+        current_meter = meter_row["current_meter_reading"] or 0
+
+        if existing_inspection:
+            inspection_id = existing_inspection["inspection_id"]
+
+            inspection_action = request.form.get("inspection_action")
+            current_meter_input = request.form.get("current_meter") or None
+
+            if current_meter_input and int(current_meter_input) < current_meter:
+                conn.close()
+                flash("Meter reading cannot be lower than the machine's current meter reading.")
+                return redirect(url_for("new_inspection", machine_id=machine_id))
+            
+            if current_meter_input:
+                update_machine_meter(conn, machine_id, int(current_meter_input))
+            
+            if inspection_action == "close":
+                close_inspection(
+                    conn,
+                    inspection_id,
+                    current_meter_input
+            )
+        else:
+            opening_meter = request.form.get("opening_meter") or None
+
+            if opening_meter and int(opening_meter) < current_meter:
+                conn.close()
+                flash("Meter reading cannot be lower than the machine's current meter reading.")
+                return redirect(url_for("new_inspection", machine_id=machine_id))
+            
+            if opening_meter:
+                update_machine_meter(conn, machine_id, int(opening_meter))
+
+            inspection = create_open_inspection(
+                conn,
+                machine_id=machine_id,
+                operator_id=session["user_id"],
+                opening_meter=opening_meter,
+                notes=notes
+            )
+
+            inspection_id = inspection["inspection_id"]
 
         results = {}
 
@@ -231,16 +300,17 @@ def new_inspection(machine_id):
 
             results[item["name"]] = passed_value == "pass"
 
-        create_inspection(
+        save_inspection_items(
             conn,
-            machine_id=machine_id,
-            operator_id=session["user_id"],
-            results=results,
-            notes=notes
+            inspection_id,
+            machine_id,
+            session["user_id"],
+            results
         )
 
+
         conn.close()
-        flash("Inspection submitted.")
+        flash("Inspection saved.")
         return redirect(url_for("machine_profile", machine_id=machine_id))
 
     conn.close()
@@ -249,7 +319,8 @@ def new_inspection(machine_id):
         "inspection_form.html",
         user=session,
         machine=machine,
-        checklist_items=checklist_items
+        checklist_items=checklist_items,
+        existing_inspection=existing_inspection
     )
 
 @app.route("/manager/machines/<int:machine_id>/checklist", methods=["GET"])

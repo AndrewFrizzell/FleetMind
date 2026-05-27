@@ -116,6 +116,12 @@ def create_tables(conn):
         machine_id INTEGER NOT NULL,
         operator_id INTEGER NOT NULL,
         inspection_date TEXT NOT NULL DEFAULT (datetime('now')),
+        
+        status TEXT NOT NULL DEFAULT 'open',
+        opening_meter INTEGER,
+        closing_meter INTEGER,
+        closed_at TEXT,
+                   
         notes TEXT,
         passed INTEGER NOT NULL DEFAULT 1,
         FOREIGN KEY (machine_id) REFERENCES Machine(machine_id),
@@ -130,6 +136,9 @@ def create_tables(conn):
         inspection_id INTEGER NOT NULL,
         item_name TEXT NOT NULL,
         passed INTEGER NOT NULL DEFAULT 1,
+        operator_decision TEXT,
+        inspection_phase TEXT NOT NULL DEFAULT 'opening',
+        created_work_order INTEGER NOT NULL DEFAULT 0,
         note TEXT,
         FOREIGN KEY (inspection_id) REFERENCES Inspections(inspection_id)
     );
@@ -182,6 +191,25 @@ def create_tables(conn):
     """)
 
     conn.commit()
+
+    #machine faults 
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS MachineFault (
+        fault_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        machine_id INTEGER NOT NULL,
+        item_name TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'open',
+        first_reported_at TEXT NOT NULL DEFAULT (datetime('now')),
+        last_reported_at TEXT,
+        work_order_id INTEGER,
+        closed_at TEXT,
+                   
+        FOREIGN KEY (machine_id) REFERENCES Machine(machine_id),
+        FOREIGN KEY (work_order_id) REFERENCES WorkOrder(work_order_id),
+        
+        UNIQUE(machine_id, item_name, status)
+    );
+    """)
 
 if __name__ == "__main__":
     conn = get_connection()

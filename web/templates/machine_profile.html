@@ -28,6 +28,7 @@
             <p><strong>VIN:</strong> {{ machine.vin_number or "N/A" }}</p>
             <p><strong>Status:</strong> {{ machine.status }}</p>
             <p><strong>Operational State</strong> {{ machine.operational_state }}</p>
+            <p><strong>Current Meter:</strong> {{ machine.current_meter_reading or 0 }}</p>
         
             {% if machine.job_name %}
                 <p><strong>Current Job:</strong> {{ machine.job_name }} - {{ machine.job_location }}</p>

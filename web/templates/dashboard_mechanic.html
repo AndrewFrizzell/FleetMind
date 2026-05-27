@@ -40,7 +40,7 @@
                                         <td>{{ wo.priority }}</td>
                                         <td>
                                             {% if wo.status != "closed" %}
-                                                <form method="POST" action="/mechanic/complete-work-order"">
+                                                <form method="POST" action="/mechanic/complete-work-order">
                                                     <input type="hidden" name="work_order_id" value="{{ wo.work_order_id }}">
                                                     <button type="submit">Completed</button>
                                                 </form>

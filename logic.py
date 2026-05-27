@@ -53,19 +53,19 @@ def get_inspections_by_user(conn, user_id):
 
 #creates inspections 
 def create_inspection(conn, machine_id, operator_id, results, notes=""):
-    cursor = conn.cursor()
+    cur = conn.cursor()
 
     # Create inspection
-    cursor.execute("""
+    cur.execute("""
         INSERT INTO Inspections (machine_id, operator_id, notes, passed)
         VALUES (?, ?, ?, ?)
     """, (machine_id, operator_id, notes, int(all(results.values()))))
 
-    inspection_id = cursor.lastrowid
+    inspection_id = cur.lastrowid
 
     # Loop through checklist results
     for item_id, passed in results.items():
-        cursor.execute("""
+        cur.execute("""
             INSERT INTO InspectionItems (inspection_id, item_name, passed, note)
             VALUES (?, ?, ?, ?)
         """, (
@@ -76,14 +76,44 @@ def create_inspection(conn, machine_id, operator_id, results, notes=""):
         ))
         # Auto-create work order if failed
         if not passed:
-            cursor.execute("""
-                INSERT INTO WorkOrder (machine_id, created_by, status, priority, notes)
-                VALUES (?, ?, 'open', 2, ?)
-            """, (
+            existing_fault = get_open_machine_fault(
+                conn,
                 machine_id,
-                operator_id,
-                f"Auto-created from failed inspection item {item_id}"
-            ))
+                item_name
+            )
+            if existing_fault:
+                update_machine_fault_last_reported(
+                    conn,
+                    existing_fault["fault_id"]
+                )
+            else:
+                fault_id = create_machine_fault(
+                    conn,
+                    machine_id,
+                    item_name
+                )
+                cur.execute("""
+                    INSERT INTO WorkOrder (
+                        machine_id,
+                        created_by,
+                        status,
+                        priority,
+                        notes        
+                    )
+                    VALUES (?, ?, 'open', 2, ?)
+                """, (
+                    machine_id,
+                    operator_id,
+                    f"Auot-created {item_name}"
+                ))
+
+                work_order_id = cur.lastrowid
+
+                link_fault_to_work_order(
+                    conn,
+                    fault_id,
+                    work_order_id
+                )
 
     conn.commit()
     return inspection_id
@@ -174,6 +204,135 @@ def remove_item_from_machine_checklist(conn, machine_checklist_item_id):
     """, (machine_checklist_item_id,))
     conn.commit()
 
+def get_open_inspection_for_machine(conn, machine_id):
+    cur=conn.cursor()
+    cur.execute("""
+        SELECT *
+        FROM Inspections
+        WHERE machine_id = ?
+            AND status = 'open'
+        ORDER BY inspection_date DESC
+        LIMIT 1
+    """, (machine_id,))
+
+    return cur.fetchone()
+
+def create_open_inspection(conn, machine_id, operator_id, opening_meter=None, notes=None):
+    existing_inspection = get_open_inspection_for_machine(conn, machine_id)
+
+    if existing_inspection:
+        return existing_inspection
+    
+    cur = conn.cursor()
+    cur.execute("""
+        INSERT INTO Inspections (
+            machine_id,
+            operator_id,
+            opening_meter,
+            notes,
+            status,
+            passed    
+            )
+        VALUES (?, ?, ?, ?, 'open', 1)
+    """,(machine_id, operator_id, opening_meter, notes))
+
+    conn.commit()
+
+    inspection_id = cur.lastrowid
+
+    cur.execute("""
+        SELECT *
+        FROM Inspections
+        WHERE inspection_id = ?
+    """, (inspection_id,))
+
+    return cur.fetchone()
+
+def close_inspection(conn, inspection_id, closing_meter=None):
+    cur = conn.cursor()
+    cur.execute("""
+        UPDATE Inspections
+        SET status = 'closed',
+            closing_meter = ?,
+            closed_at = datetime('now')
+        WHERE inspection_id = ?
+    """, (closing_meter, inspection_id))
+
+    conn.commit()
+
+def save_inspection_items(conn, inspection_id, machine_id, operator_id, results):
+    cur = conn.cursor()
+
+    cur.execute("""
+    DELETE FROM InspectionItems
+    WHERE inspection_id = ?
+    """, (inspection_id,))
+
+    for item_name, passed in results.items():
+        cur.execute("""
+            INSERT INTO InspectionItems (
+                inspection_id,
+                item_name,
+                passed,
+                note
+            )
+            VALUES (?, ?, ?, ?)
+        """, (inspection_id,
+              item_name,
+              int(passed),
+              ""
+            ))
+        if not passed:
+            existing_fault = get_open_machine_fault(
+                conn,
+                machine_id,
+                item_name
+            )
+            if existing_fault:
+                update_machine_fault_last_reported(
+                    conn,
+                    existing_fault["fault_id"]
+                )
+            else:
+                fault_id = create_machine_fault(
+                    conn,
+                    machine_id,
+                    item_name
+                )
+                cur.execute("""
+                    INSERT INTO WorkOrder (
+                        machine_id,
+                        created_by,
+                        status,
+                        priority,
+                        notes        
+                    )
+                    VALUES (?, ?, 'open', 2, ?)
+                """, (
+                    machine_id,
+                    operator_id,
+                    f"Auot-created from inspection: {item_name}"
+                ))
+
+                work_order_id = cur.lastrowid
+
+                link_fault_to_work_order(
+                    conn,
+                    fault_id,
+                    work_order_id
+                )
+
+    
+    cur.execute("""
+        UPDATE Inspections
+        SET passed = ?
+        WHERE inspection_id = ?
+    """, (
+        int(all(results.values())),
+        inspection_id
+    ))
+        
+    conn.commit()
 
 #======================================
 # work orders
@@ -313,7 +472,69 @@ def get_all_work_orders(conn):
 
     return cursor.fetchall()
 
+def get_open_machine_fault(conn, machine_id, item_name):
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT *
+        FROM MachineFault
+        WHERE machine_id = ?
+            AND item_name = ?
+            AND status = 'open'
+        LIMIT 1
+    """, (machine_id, item_name))
+
+    return cur.fetchone()
+
+def create_machine_fault(conn, machine_id, item_name):
+    cur = conn.cursor()
+
+    cur.execute("""
+        INSERT INTO MachineFault (
+            machine_id,
+            item_name,
+            status,
+            last_reported_at        
+        )
+        VALUES (?, ?, 'open', datetime('now'))
+    """, (machine_id, item_name))
+
+    conn.commit()
+
+    return cur.lastrowid
+
+def update_machine_fault_last_reported(conn, fault_id):
+    cur = conn.cursor()
+
+    cur.execute("""
+        UPDATE MachineFault
+        SET last_reported_at = datetime('now')
+        WHERE fault_id = ?
+    """, (fault_id,))
+
+    conn.commit()
+
+def link_fault_to_work_order(conn, fault_id, work_order_id):
+    cur = conn.cursor()
+
+    cur.execute("""
+        UPDATE MachineFault
+        SET work_order_id = ?
+        WHERE fault_id = ?
+    """, (work_order_id, fault_id))
+
+    conn.commit()
     
+def close_machine_fault_for_work_order(conn, work_order_id):
+    cur = conn.cursor()
+
+    cur.execute("""
+        UPDATE MachineFault
+        SET status = 'closed',
+            closed_at = datetime('now')
+        WHERE work_order_id = ?
+            AND status = 'open'
+    """, (work_order_id,))
 
 
 
@@ -402,27 +623,30 @@ def close_assignment_if_finished(conn, assignment_id):
 
 #complete work orders and close assignments 
 def complete_work_order(conn, work_order_id):
-    cursor = conn.cursor()
+    cur = conn.cursor()
 
-    cursor.execute("""
+    cur.execute("""
         SELECT assignment_id
         FROM WorkOrder
         WHERE work_order_id = ?
     """, (work_order_id,))
 
-    row = cursor.fetchone()
+    row = cur.fetchone()
 
     if row is None:
         raise ValueError("Work order does not exist.")
     
     assignment_id = row[0]
 
-    cursor.execute("""
+    cur.execute("""
         UPDATE WorkOrder
         SET status = 'closed',
             completed_at = datetime('now')
         WHERE work_order_id = ?
     """, (work_order_id,))
+
+    
+    close_machine_fault_for_work_order(conn, work_order_id)
 
     if assignment_id is not None:
         close_assignment_if_finished(conn, assignment_id)
@@ -495,6 +719,29 @@ def create_machine(conn,
 
     conn.commit()
     return cur.lastrowid
+
+
+def update_machine_meter(conn, machine_id, new_meter_reading):
+    cur = conn.cursor()
+
+    cur.execute("""
+        UPDATE Machine
+        SET current_meter_reading = ?
+        WHERE machine_id = ?
+    """, (new_meter_reading, machine_id))
+
+    conn.commit()
+
+def get_machine_current_meter(conn, machine_id):
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT current_meter_reading
+        FROM Machine
+        WHERE machine_id = ?
+    """, (machine_id,))
+
+    return cur.fetchone()
 
 #move machine to job
 def move_machine_to_job(conn, machine_id, new_job_id):
@@ -599,6 +846,7 @@ def get_machine_by_id(conn, machine_id):
             m.year,
             m.status,
             m.operational_state,
+            m.current_meter_reading,
             m.current_job_id,
             j.name AS job_name,
             j.location AS job_location

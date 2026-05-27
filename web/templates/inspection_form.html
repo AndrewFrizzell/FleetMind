@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <div class="contianer">
+    <div class="container">
         <div class="header">
             <div>
                 <h1>New Inspection</h1>
@@ -20,6 +20,44 @@
 
                 <h2>{{ machine.make }} {{ machine.model }}</h2>
                 <p class="muted">Serial: {{ machine.serial_number }}</p>
+
+                {% if existing_inspection %}
+                    <div class="card">
+                        <p><strong>Open Inspection Active</strong></p>
+                        <p>
+                            Opening meter: 
+                            {{ existing_inspection["opening_meter"] }}
+                        </p>
+
+                        <label><strong>Current/Ending Hours Meter</strong></label>
+                        <br>
+
+                        <input type="number" name="current_meter" required>
+
+                        <br><br>
+
+                        <label>
+                            <input type="radio" name="inspection_action" value="update" required>
+                            Update inspection only
+                        </label>
+
+                        <br>
+
+                        <label>
+                            <input type="radio" name="inspection_action" value="close" required>
+                            Close inspection
+                        </label>
+                    </div>
+                {% else %}
+                    <div class="card">
+                        <p><strong>Opening Inspection</strong></p>
+
+                        <label><strong>Opening hours/ meter</strong></label>
+                        <br>
+                        <input type="number" name="opening_meter" required>
+                    </div>
+                {% endif %}
+
                 <h2>Checklist</h2>
 
                 <table>
