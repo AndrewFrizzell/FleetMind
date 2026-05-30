@@ -33,7 +33,9 @@ from logic import (
             update_machine_meter,
             get_machine_current_meter,
             get_open_faults_for_machine,
-            get_work_order_by_id
+            get_work_order_by_id,
+            add_work_order_comment,
+            get_work_order_comments
 
 )
 
@@ -194,6 +196,7 @@ def work_order_detail(work_order_id):
     conn = get_connection()
 
     work_order = get_work_order_by_id(conn, work_order_id)
+    comments = get_work_order_comments(conn, work_order_id)
 
     conn.close()
 
@@ -203,8 +206,31 @@ def work_order_detail(work_order_id):
     return render_template(
         "work_order_detail.html",
         user=session,
-        work_order=work_order
+        work_order=work_order,
+        comments=comments
     )
+
+@app.route("/work-orders/<int:work_order_id>/comments/add", methods=["POST"])
+@login_required
+def add_work_order_comment_route(work_order_id):
+    comment = request.form.get("comment", "").strip()
+
+    if not comment:
+        flash("Comment cannot be empty.")
+        return redirect(url_for("work_order_detail", work_order_id=work_order_id))
+    
+    conn = get_connection()
+
+    add_work_order_comment(
+        conn,
+        work_order_id,
+        session["user_id"],
+        comment
+    )
+
+    conn.close()
+    flash("Comment added.")
+    return redirect(url_for("work_order_detail", work_order_id=work_order_id))
 
 @app.route("/mechanic/complete-work-order", methods=["POST"])
 @login_required

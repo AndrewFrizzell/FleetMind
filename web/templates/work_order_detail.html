@@ -63,6 +63,40 @@
             {% endif %}
         </div>
 
+        <div class="card">
+            <h2>Comments / Timeline</h2>
+
+            <form method="POST" action="{{ url_for('add_work_order_comment_route', work_order_id=work_order.work_order_id) }}">
+               <textarea 
+                    name="comment" 
+                    rows="4"
+                    style="width: 100%;"
+                    placeholder="Add update, note, or repair comment.."
+                    required></textarea>
+
+                    <br><br>
+
+                    <button type="submit" class="primary">Add Comment</button>
+            </form>
+
+            <hr>
+
+            {% if comments and comments|length > 0 %}
+                {% for comment in comments %}
+                    <div style="margin-bottom: 16px;">
+                        <p>
+                            <strong>{{ comment.name }}</strong>
+                            <span class="muted">{{ comment.role }} - {{ comment.created_at }}</span>
+                        </p>
+
+                        <p>{{ comment.comment }}</p>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p>No comments yet.</p>
+            {% endif %}
+        </div>
+
 
     </div>   
 </body>

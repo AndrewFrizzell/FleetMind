@@ -633,6 +633,44 @@ def get_work_order_by_id(conn, work_order_id):
     
     return cur.fetchone()
 
+def add_work_order_comment(conn, work_order_id, user_id, comment):
+    cur = conn.cursor()
+
+    cur.execute("""
+        INSERT INTO WorkOrderComment (
+            work_order_id,
+            user_id,
+            comment
+        )
+        VALUES (?, ?, ?)
+    """, (
+        work_order_id,
+        user_id,
+        comment
+    ))
+
+    conn.commit()
+
+def get_work_order_comments(conn, work_order_id):
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT 
+            woc.comment_id,
+            woc.comment,
+            woc.created_at,
+            u.user_id,
+            u.name,
+            u.role
+        FROM WorkOrderComment woc
+        JOIN User u
+            ON woc.user_id = u.user_id
+        WHERE woc.work_order_id = ?
+        ORDER BY woc.created_at DESC
+    """, (work_order_id,))
+
+    return cur.fetchall()
+
 
 
 #===================================
