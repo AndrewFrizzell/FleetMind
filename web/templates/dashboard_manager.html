@@ -42,7 +42,11 @@
                                 <td>
                                     <input type="checkbox" name="work_order_ids" value="{{ wo.work_order_id }}">
                                 </td>
-                                <td>{{ wo.work_order_id }}</td>
+                                <td>
+                                    <a href="{{ url_for('work_order_detail', work_order_id=wo.work_order_id) }}">
+                                        #{{ wo.work_order_id }}
+                                    </a>
+                                </td>
                                 <td>{{ wo.serial_number }}</td>
                                 <td>{{ wo.notes }}</td>
                                 <td>{{ wo.priority }}</td>

@@ -89,25 +89,25 @@ def create_tables(conn):
     """)
 
     # Checklist template
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS ChecklistTemplate (
-        template_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        created_by INTEGER NOT NULL,
-        FOREIGN KEY (created_by) REFERENCES User(user_id)
-    );
-    """)
+ #   cursor.execute("""
+  #  CREATE TABLE IF NOT EXISTS ChecklistTemplate (
+  #      template_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  #      name TEXT NOT NULL,
+  #      created_by INTEGER NOT NULL,
+  #      FOREIGN KEY (created_by) REFERENCES User(user_id)
+  #  );
+  #  """)
 
     # Template items
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS TemplateItems (
-        item_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        template_id INTEGER NOT NULL,
-        description TEXT NOT NULL,
-        required INTEGER NOT NULL DEFAULT 1,
-        FOREIGN KEY (template_id) REFERENCES ChecklistTemplate(template_id)
-    );
-    """)
+#    cursor.execute("""
+ #   CREATE TABLE IF NOT EXISTS TemplateItems (
+ #      item_id INTEGER PRIMARY KEY AUTOINCREMENT,
+ #       template_id INTEGER NOT NULL,
+ #       description TEXT NOT NULL,
+ #       required INTEGER NOT NULL DEFAULT 1,
+ #       FOREIGN KEY (template_id) REFERENCES ChecklistTemplate(template_id)
+ #   );
+ #   """)
 
     # Inspections
     cursor.execute("""
@@ -118,8 +118,8 @@ def create_tables(conn):
         inspection_date TEXT NOT NULL DEFAULT (datetime('now')),
         
         status TEXT NOT NULL DEFAULT 'open',
-        opening_meter INTEGER,
-        closing_meter INTEGER,
+        opening_meter REAL,
+        closing_meter REAL,
         closed_at TEXT,
                    
         notes TEXT,
@@ -190,7 +190,6 @@ def create_tables(conn):
     );
     """)
 
-    conn.commit()
 
     #machine faults 
     cursor.execute("""
@@ -205,14 +204,15 @@ def create_tables(conn):
         closed_at TEXT,
                    
         FOREIGN KEY (machine_id) REFERENCES Machine(machine_id),
-        FOREIGN KEY (work_order_id) REFERENCES WorkOrder(work_order_id),
+        FOREIGN KEY (work_order_id) REFERENCES WorkOrder(work_order_id)
         
-        UNIQUE(machine_id, item_name, status)
     );
     """)
 
+    conn.commit()
+
 if __name__ == "__main__":
-    conn = get_connection()
+    conn = get_connection()   
     create_tables(conn)
     conn.close()
     print("Database updated successfully")

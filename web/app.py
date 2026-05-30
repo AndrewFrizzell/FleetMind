@@ -14,8 +14,6 @@ from logic import (
             get_assignments_for_mechanics,
             get_work_orders_for_assignment,
             complete_work_order,
-            get_active_checklist_items,
-            create_inspection,
             get_master_checklist_items,
             get_machine_checklist,
             add_item_to_machine_checklist,
@@ -33,7 +31,9 @@ from logic import (
             save_inspection_items,
             close_inspection,
             update_machine_meter,
-            get_machine_current_meter
+            get_machine_current_meter,
+            get_open_faults_for_machine,
+            get_work_order_by_id
 
 )
 
@@ -188,6 +188,24 @@ def manager_create_assignment():
     flash(f"Created assignment #{assignment_id}.")
     return redirect(url_for("dashboard"))
 
+@app.route("/work-orders/<int:work_order_id>")
+@login_required
+def work_order_detail(work_order_id):
+    conn = get_connection()
+
+    work_order = get_work_order_by_id(conn, work_order_id)
+
+    conn.close()
+
+    if work_order is None:
+        return "Work order not found", 404
+    
+    return render_template(
+        "work_order_detail.html",
+        user=session,
+        work_order=work_order
+    )
+
 @app.route("/mechanic/complete-work-order", methods=["POST"])
 @login_required
 def mechanic_complete_work_order():
@@ -204,7 +222,6 @@ def mechanic_complete_work_order():
     conn = get_connection()
 
     try:
-        print("completing work order:", work_order_id)
         complete_work_order(conn, int(work_order_id))
 
         cur = conn.cursor()
@@ -214,12 +231,10 @@ def mechanic_complete_work_order():
             WHERE work_order_id = ?
         """, (int(work_order_id),))
 
-        print("AFTER COMPLETE:", dict(cur.fetchone()))
-
         flash(f"Work order #{work_order_id} completed.")
     except Exception as e:
+        print(f"error", e)
         conn.rollback()
-        print("error completing work order:", e)
         flash(f"Error: {e}")
     finally:
         conn.close()
@@ -270,7 +285,7 @@ def new_inspection(machine_id):
                     conn,
                     inspection_id,
                     current_meter_input
-            )
+                )
         else:
             opening_meter = request.form.get("opening_meter") or None
 
@@ -399,6 +414,8 @@ def machine_profile(machine_id):
 
     machine = get_machine_by_id(conn, machine_id)
 
+    open_faults = get_open_faults_for_machine(conn, machine_id)
+
     if machine is None:
         conn.close()
         return "Machine not found", 404
@@ -414,7 +431,8 @@ def machine_profile(machine_id):
         machine=machine,
         open_work_orders=open_work_orders,
         recent_inspections=recent_inspections,
-        machine_checklist=machine_checklist
+        machine_checklist=machine_checklist,
+        open_faults=open_faults
     )
 
 @app.route("/machines")
@@ -436,7 +454,7 @@ def inspections():
     conn = get_connection()
 
     if session.get("role") == "operator":
-        inspection = get_inspections_by_user(conn, session["user_id"])
+        inspections = get_inspections_by_user(conn, session["user_id"])
     else:
         inspections = get_all_inspections(conn)
 

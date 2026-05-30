@@ -51,72 +51,6 @@ def get_inspections_by_user(conn, user_id):
 
     return cur.fetchall()
 
-#creates inspections 
-def create_inspection(conn, machine_id, operator_id, results, notes=""):
-    cur = conn.cursor()
-
-    # Create inspection
-    cur.execute("""
-        INSERT INTO Inspections (machine_id, operator_id, notes, passed)
-        VALUES (?, ?, ?, ?)
-    """, (machine_id, operator_id, notes, int(all(results.values()))))
-
-    inspection_id = cur.lastrowid
-
-    # Loop through checklist results
-    for item_id, passed in results.items():
-        cur.execute("""
-            INSERT INTO InspectionItems (inspection_id, item_name, passed, note)
-            VALUES (?, ?, ?, ?)
-        """, (
-            inspection_id,
-            str(item_id),
-            int(passed),
-            ""
-        ))
-        # Auto-create work order if failed
-        if not passed:
-            existing_fault = get_open_machine_fault(
-                conn,
-                machine_id,
-                item_name
-            )
-            if existing_fault:
-                update_machine_fault_last_reported(
-                    conn,
-                    existing_fault["fault_id"]
-                )
-            else:
-                fault_id = create_machine_fault(
-                    conn,
-                    machine_id,
-                    item_name
-                )
-                cur.execute("""
-                    INSERT INTO WorkOrder (
-                        machine_id,
-                        created_by,
-                        status,
-                        priority,
-                        notes        
-                    )
-                    VALUES (?, ?, 'open', 2, ?)
-                """, (
-                    machine_id,
-                    operator_id,
-                    f"Auot-created {item_name}"
-                ))
-
-                work_order_id = cur.lastrowid
-
-                link_fault_to_work_order(
-                    conn,
-                    fault_id,
-                    work_order_id
-                )
-
-    conn.commit()
-    return inspection_id
 
 def get_active_checklist_items(conn):
     cur = conn.cursor()
@@ -311,7 +245,7 @@ def save_inspection_items(conn, inspection_id, machine_id, operator_id, results)
                 """, (
                     machine_id,
                     operator_id,
-                    f"Auot-created from inspection: {item_name}"
+                    f"Auto-created from inspection: {item_name}"
                 ))
 
                 work_order_id = cur.lastrowid
@@ -653,6 +587,52 @@ def complete_work_order(conn, work_order_id):
 
     conn.commit()
 
+def get_work_order_by_id(conn, work_order_id):
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT 
+            wo.work_order_id,
+            wo.machine_id,
+            wo.created_by,
+            wo.assigned_to,
+            wo.assignment_id,
+            wo.status,
+            wo.priority,
+            wo.created_at,
+            wo.completed_at,
+            wo.notes,
+                
+            m.unit_number,
+            m.serial_number,
+            m.type,
+            m.make,
+            m.model,
+
+            creator.name AS created_by_name,
+            mechanic.name AS assigned_to_name,
+
+            mf.fault_id,
+            mf.item_name AS fault_id_name,
+            mf.status AS fault_status,
+            mf.first_reported_at,
+            mf.last_reported_at,
+            mf.closed_at AS fault_closed_at
+                
+        FROM WorkOrder wo
+        JOIN Machine m
+            ON wo.machine_id = m.machine_id
+        JOIN User creator 
+            ON wo.created_by = creator.user_id
+        LEFT JOIN User mechanic
+            ON wo.assigned_to = mechanic.user_id
+        LEFT JOIN MachineFault mf
+            ON mf.work_order_id = wo.work_order_id
+        WHERE wo.work_order_id = ?
+    """, (work_order_id,))
+    
+    return cur.fetchone()
+
 
 
 #===================================
@@ -821,7 +801,7 @@ def get_all_machines(conn, include_inactive=True):
                 m.current_meter_reading,
                 m.status,
                 m.operational_state,
-                m.photo_url
+                m.photo_url,
                 m.current_job_id,
                 j.name
             FROM Machine m
@@ -850,7 +830,7 @@ def get_machine_by_id(conn, machine_id):
             m.current_job_id,
             j.name AS job_name,
             j.location AS job_location
-        FROM machine m
+        FROM Machine m
         LEFT JOIN Job j ON m.current_job_id = j.job_id
         WHERE m.machine_id = ?
     """, (machine_id,))
@@ -893,6 +873,23 @@ def get_recent_inspections_for_machine(conn, machine_id):
         ORDER BY i.inspection_date DESC
         LIMIT 10
     """, (machine_id,))
+    return cur.fetchall()
+
+def get_open_faults_for_machine(conn, machine_id):
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT 
+            fault_id,
+            item_name,
+            first_reported_at,
+            work_order_id
+        FROM MachineFault
+        WHERE machine_id = ?
+            AND status = 'open'
+        ORDER BY first_reported_at DESC
+    """,(machine_id,))
+
     return cur.fetchall()
 
 

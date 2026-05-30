@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Work Order Detail</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+    <div class="container">
+
+        <div class="header">
+            <div>
+                <h1>Work order #{{ work_order.work_order_id }}</h1>
+                {% include "partials/navbar.html" %}
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Word Order Info</h2>
+
+            <p><strong>Status:</strong> {{ work_order.status }}</p>
+            <p><strong>Priority:</strong> {{ work_order.priority }}</p>
+            <p><strong>Created:</strong> {{ work_order.created_at }}</p>
+            <p><strong>Completed:</strong> {{ work_order.completed_at or "Not completed" }}</p>
+            <p><strong>Created By:</strong> {{ work_order.created_by_name }}</p>
+            <p><strong>Assigned to:</strong> {{ work_order.assigned_to_name or "Unassigned" }}</p>
+
+            <p><strong>Notes:</strong></p>
+            <p>{{ work_order.notes }}</p>
+        </div>
+
+        <div class="card">
+            <h2>Machine</h2>
+
+            <p>
+                <strong>Machine:</strong>
+                {{ work_order.unit_number }} -
+                {{ work_order.make }} {{ work_order.model }}
+            </p>
+
+            <p><strong>Serial:</strong> {{ work_order.serial_number }}</p>
+            <p><strong>Type:</strong> {{ work_order.type }}</p>
+
+            <p>
+                <a href="{{ url_for('machine_profile', machine_id=work_order.machine_id) }}">
+                    View Machine Profile
+                </a>
+            </p>
+        </div>
+
+        <div class="card">
+            <h2>Link Fault</h2>
+
+            {% if work_order.fault_id %}
+                <p><strong>Fault:</strong> {{ work_order.fault_item_name }}</p>
+                <p><strong>Status:</strong> {{ work_order.fault_status }}</p>
+                <p><strong>First Reported:</strong> {{ work_order.first_reported_at }}</p>
+                <p><strong>Last Reported:</strong> {{ work_order.last_reported_at or "N/A" }}</p>
+                <p><strong>Closed:</strong> {{ work_order.fault_closed_at or "Not closed"}}</p>
+            {% else %}
+                <p>No linked machine fault.</p>
+            {% endif %}
+        </div>
+
+
+    </div>   
+</body>
+</html>

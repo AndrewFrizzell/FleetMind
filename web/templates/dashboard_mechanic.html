@@ -33,7 +33,11 @@
                                 </tr>
                                 {% for wo in item.work_orders %}
                                     <tr>
-                                        <td>{{ wo.work_order_id }}</td>
+                                        <td>
+                                            <a href="{{ url_for('work_order_detail', work_order_id=wo.work_order_id) }}">
+                                                #{{ wo.work_order_id }}
+                                            </a>
+                                        </td>
                                         <td>{{ wo.serial_number }}</td>
                                         <td>{{ wo.notes }}</td>
                                         <td>{{ wo.status }}</td>

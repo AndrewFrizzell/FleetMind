@@ -52,6 +52,38 @@
         </div>
 
         <div class="card">
+            <h2>Active Faults</h2>
+
+            {% if open_faults and open_faults|length > 0 %}
+                <table>
+                    <tr>
+                        <th>Fault</th>
+                        <th>First Reported</th>
+                        <th>Last Reported</th>
+                        <th>Work Order</th>
+                    </tr>
+
+                    {% for fault in open_faults %}
+                        <tr>
+                            <td>{{ fault.item_name }}</td>
+                            <td>{{ fault.first_reported_at }}</td>
+                            <td>{{ fault.last_reported_at or "N/A" }}</td>
+                            <td>
+                                {% if fault.work_order_id %}
+                                    #{{ fault.work_order_id }}
+                                {% else %}
+                                    Not Linked
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            {% else %}
+                <p>No active faults.</p>
+            {% endif %}
+        </div>
+
+        <div class="card">
             <h2>Open Work Orders</h2>
             {% if open_work_orders and open_work_orders|length > 0 %}
                 <table>
@@ -66,7 +98,11 @@
 
                     {% for wo in open_work_orders %}
                         <tr>
-                            <td>{{ wo.work_order_id }}</td>
+                            <td>
+                                <a href="{{ url_for('work_order_detail', work_order_id=wo.work_order_id) }}">
+                                    #{{ wo.work_order_id }}
+                                </a>
+                            </td>
                             <td>{{ wo.status }}</td>
                             <td>{{ wo.priority }}</td>
                             <td>

@@ -20,6 +20,7 @@
 
                 <h2>{{ machine.make }} {{ machine.model }}</h2>
                 <p class="muted">Serial: {{ machine.serial_number }}</p>
+                <p>Last updated meter reading: {{ machine.current_meter_reading }}</p>
 
                 {% if existing_inspection %}
                     <div class="card">
@@ -28,6 +29,7 @@
                             Opening meter: 
                             {{ existing_inspection["opening_meter"] }}
                         </p>
+                        
 
                         <label><strong>Current/Ending Hours Meter</strong></label>
                         <br>
