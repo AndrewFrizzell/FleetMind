@@ -192,6 +192,21 @@ def create_tables(conn):
     );
     """)
 
+    #work order events 
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS WorkOrderEvents(
+        event_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        work_order_id INTEGER NOT NULL,
+        user_id INTEGER,
+        event_type TEXT NOT NULL,
+        description TEXT NOT NULL,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        
+        FOREIGN KEY (work_order_id) REFERENCES WorkOrder(work_order_id),
+        FOREIGN KEY (user_id) REFERENCES User(user_id)
+    );    
+    """)
+
     # User shifts
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS UserShift (

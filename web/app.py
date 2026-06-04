@@ -35,7 +35,10 @@ from logic import (
             get_open_faults_for_machine,
             get_work_order_by_id,
             add_work_order_comment,
-            get_work_order_comments
+            get_work_order_comments,
+            get_work_order_events,
+            add_work_order_event,
+            get_work_order_timeline
 
 )
 
@@ -196,7 +199,7 @@ def work_order_detail(work_order_id):
     conn = get_connection()
 
     work_order = get_work_order_by_id(conn, work_order_id)
-    comments = get_work_order_comments(conn, work_order_id)
+    timeline = get_work_order_timeline(conn, work_order_id)
 
     conn.close()
 
@@ -207,7 +210,7 @@ def work_order_detail(work_order_id):
         "work_order_detail.html",
         user=session,
         work_order=work_order,
-        comments=comments
+        timeline=timeline
     )
 
 @app.route("/work-orders/<int:work_order_id>/comments/add", methods=["POST"])

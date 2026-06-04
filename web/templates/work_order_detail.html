@@ -64,37 +64,46 @@
         </div>
 
         <div class="card">
-            <h2>Comments / Timeline</h2>
+            <h2>Timeline</h2>
 
-            <form method="POST" action="{{ url_for('add_work_order_comment_route', work_order_id=work_order.work_order_id) }}">
-               <textarea 
-                    name="comment" 
-                    rows="4"
-                    style="width: 100%;"
-                    placeholder="Add update, note, or repair comment.."
-                    required></textarea>
-
-                    <br><br>
-
-                    <button type="submit" class="primary">Add Comment</button>
-            </form>
-
-            <hr>
-
-            {% if comments and comments|length > 0 %}
-                {% for comment in comments %}
+            {% if timeline and timeline|length > 0 %}
+                {% for item in timeline %}
                     <div style="margin-bottom: 16px;">
-                        <p>
-                            <strong>{{ comment.name }}</strong>
-                            <span class="muted">{{ comment.role }} - {{ comment.created_at }}</span>
-                        </p>
-
-                        <p>{{ comment.comment }}</p>
+                        {% if item.timeline_type == "event" %}
+                            <p>
+                                <strong>[SYSTEM] {{ item.event_type }}</strong>
+                                <span class="muted">- {{ item.created_at }}</span>
+                            </p>
+                            <p>{{ item.description }}</p>
+                        {% else %}
+                            <p>
+                                <strong>{{ item.user_name }}</strong>
+                                <span class="muted">({{ item.user_role }}) - {{ item.created_at }} </span>
+                            </p>
+                            <p>{{ item.description }}</p>
+                        {% endif %}
                     </div>
                 {% endfor %}
             {% else %}
-                <p>No comments yet.</p>
+                <p>No timeline activity yet.</p>
             {% endif %}
+
+            <hr>
+
+            <form method="POST" action="{{ url_for('add_work_order_comment_route', work_order_id=work_order.work_order_id) }}">
+                <textarea name="comment"
+                rows="4"
+                style="width: 100%"
+                placeholder="Add update, note, or repair comment.."
+                required
+                ></textarea>
+
+                <br><br>
+
+                <button type="submit" class="primary">Add Comment</button>
+            </form>
+
+            
         </div>
 
 

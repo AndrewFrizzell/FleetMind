@@ -250,6 +250,14 @@ def save_inspection_items(conn, inspection_id, machine_id, operator_id, results)
 
                 work_order_id = cur.lastrowid
 
+                add_work_order_event(
+                    conn,
+                    work_order_id,
+                    "work_order_created",
+                    f"Work order #{work_order_id} created from failed inspection item: {item_name}",
+                    operator_id
+                )
+
                 link_fault_to_work_order(
                     conn,
                     fault_id,
@@ -470,6 +478,83 @@ def close_machine_fault_for_work_order(conn, work_order_id):
             AND status = 'open'
     """, (work_order_id,))
 
+def add_work_order_event(conn, work_order_id, event_type, description, user_id=(None)):
+    cur = conn.cursor()
+
+    cur.execute("""
+        INSERT INTO WorkOrderEvents (
+            work_order_id,
+            user_id,
+            event_type,
+            description    
+        )
+        VALUES (?, ?, ?, ?)
+    """, (
+        work_order_id,
+        user_id,
+        event_type,
+        description
+    ))
+
+    conn.commit()
+
+def get_work_order_events(conn, work_order_id):
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT
+            woe.event_id,
+            woe.event_type,
+            woe.description,
+            woe.created_at,
+            u.name,
+            u.role
+        FROM WorkOrderEvents woe
+        LEFT JOIN User u
+            ON woe.user_id = u.user_id
+        WHERE woe.work_order_id = ?
+        ORDER BY woe.created_at DESC
+    """, (work_order_id,))
+
+    return cur.fetchall()
+
+def get_work_order_timeline(conn, work_order_id):
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT 
+            'comment' AS timeline_type,
+            woc.comment_id AS record_id,
+            woc.comment AS description,
+            woc.created_at,
+            u.name AS user_name,
+            u.role AS user_role,
+            NULL AS event_type
+        FROM WorkOrderComment woc
+        JOIN User u
+            ON woc.user_id = u.user_id
+        WHERE woc.work_order_id = ?
+        
+        UNION ALL
+                
+        SELECT 
+            'event' AS timeline_type,
+            woe.event_id AS record_id,
+            woe.description AS description,
+            woe.created_at,
+            u.name AS user_name,
+            u.role AS user_role,
+            woe.event_type AS event_type
+        FROM WorkOrderEvents woe
+        LEFT JOIN User u
+            ON woe.user_id = u.user_id
+        WHERE woe.work_order_id = ?
+                
+        ORDER BY created_at DESC
+    """,(work_order_id, work_order_id))
+
+    return cur.fetchall()
+
 
 
 #=====================================
@@ -578,6 +663,13 @@ def complete_work_order(conn, work_order_id):
             completed_at = datetime('now')
         WHERE work_order_id = ?
     """, (work_order_id,))
+
+    add_work_order_event(
+        conn,
+        work_order_id,
+        "work_order_completed",
+        f"Work order #{work_order_id} was completed."
+    )
 
     
     close_machine_fault_for_work_order(conn, work_order_id)
