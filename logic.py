@@ -276,6 +276,71 @@ def save_inspection_items(conn, inspection_id, machine_id, operator_id, results)
         
     conn.commit()
 
+def get_inspections_for_operator(conn, operator_id):
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT 
+            i.inspection_id,
+            i.machine_id,
+            i.inspection_date,
+            i.status,
+            i.opening_meter,
+            i.closing_meter,
+            i.closed_at,
+            i.passed,
+            i.notes,
+                
+            m.unit_number,
+            m.serial_number,
+            m.type,
+            m.make,
+            m.model,
+            m.current_meter_reading
+                
+        FROM Inspections i 
+        JOIN Machine m
+            ON i.machine_id = m.machine_id
+        WHERE i.operator_id = ?
+        ORDER BY i.inspection_date DESC
+    """,(operator_id,))
+
+    return cur.fetchall()
+
+def get_operator_machine_list(conn):
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT 
+            m.machine_id,
+            m.unit_number,
+            m.serial_number,
+            m.type,
+            m.make,
+            m.model,
+            m.current_meter_reading,
+            m.operational_state,
+                
+            i.inspection_id AS open_inspection_id,
+            i.operator_id AS open_operator_id,
+            u.name AS open_operator_name
+            
+        FROM Machine m
+        
+        LEFT JOIN Inspections i 
+            ON m.machine_id = i.machine_id
+            AND i.status = 'open'
+                
+        LEFT JOIN User u 
+            ON i.operator_id = u.user_id
+
+        WHERE m.status = 'active'
+
+        ORDER BY m.unit_number ASC 
+    """)
+
+    return cur.fetchall()
+
 #======================================
 # work orders
 #======================================
@@ -283,9 +348,9 @@ def save_inspection_items(conn, inspection_id, machine_id, operator_id, results)
 
     #open work orders 
 def get_open_work_orders(conn):
-    cursor = conn.cursor()
+    cur = conn.cursor()
 
-    cursor.execute("""
+    cur.execute("""
         SELECT 
             wo.work_order_id,
             m.serial_number,
@@ -299,7 +364,7 @@ def get_open_work_orders(conn):
         ORDER BY wo.priority DESC, wo.created_at ASC
     """)
 
-    return cursor.fetchall()
+    return cur.fetchall()
 
 #work orders for assignment 
 def get_work_orders_for_assignment(conn, assignment_id):

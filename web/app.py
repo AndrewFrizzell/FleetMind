@@ -38,7 +38,9 @@ from logic import (
             get_work_order_comments,
             get_work_order_events,
             add_work_order_event,
-            get_work_order_timeline
+            get_work_order_timeline,
+            get_inspections_for_operator,
+            get_operator_machine_list
 
 )
 
@@ -118,9 +120,35 @@ def dashboard():
     role = session.get("role")
 
     if role == "operator":
-        return render_template("dashboard_operator.html", user=session)
+        conn = get_connection()
+
+        operator_inspections = get_inspections_for_operator(
+            conn,
+            session["user_id"]
+        )
+
+        open_inspections = [
+            inspection for inspection in operator_inspections
+            if inspection["status"] == "open"
+        ]
+
+        recent_inspections = operator_inspections[:10]
+
+        machines = get_operator_machine_list(conn)
+
+        conn.close()
+
+        return render_template(
+            "dashboard_operator.html",
+            user=session,
+            open_inspections=open_inspections,
+            recent_inspections=recent_inspections,
+            machines=machines
+        )
+
     if role == "foreman":
         return render_template("dashboard_foreman.html", user=session)
+    
     if role == "equipment_manager":
         conn = get_connection()
         open_work_orders = get_open_work_orders(conn)

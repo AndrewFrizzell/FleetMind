@@ -6,13 +6,145 @@
         <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     </head>
     <body>
-        <h1>Equipment Manager Dashboard</h1>
-        {% include "partials/navbar.html" %}
-        <form method="POST" action="/logout">
-            <button type="submit">Logout</button>
-        </form>
+    <div class="container">
 
-        <hr />
-        <p>Next: show open work orders, assign/group into mechanic assignmetns.</p>
+        <div class="header">
+            <div>
+                <h1>Operator Dashboard</h1>
+                {% include "partials/navbar.html" %}
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>My Open Inspections</h2>
+
+            {% if open_inspections and open_inspections|length > 0 %}
+                <table>
+                    <tr>
+                        <th>Machine</th>
+                        <th>Opened</th>
+                        <th>Opening Meter</th>
+                        <th>Action</th>
+                    </tr>
+
+                    {% for inspections in open_inspections %}
+                        <tr>
+                            <td>
+                                {{ inspection.unit_number }} -
+                                {{ inspection.make }} {{ inspection.model }}
+                            </td>
+                            <td>{{ inspection.inspection_date }}</td>
+                            <td>{{ inspection.opening_meter }}</td>
+                            <td>
+                                <a href="{{ url_for('new_inspection', machine_id=inspection.machine_id) }}">
+                                    update / close
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            {% else %}
+                <p>No open inspections.</p>
+            {% endif %}
+        </div>
+
+        <div class="card">
+            <h2>Machines Available to Inspect</h2>
+
+            {% if machines and machines|length > 0 %}
+                <table>
+                    <tr>
+                        <th>Unit</th>
+                        <th>Machine</th>
+                        <th>Status</th>
+                        <th>Meter</th>
+                        <th>Inspection Status</th>
+                        <th>Action</th>
+                    </tr>
+
+                    {% for machine in machines %}
+                        <tr>
+                            <td>
+                                <a href="{{ url_for('machine_profile', machine_id=machine.machine_id )}}">
+                                    {{ machine.unit_number }}
+                                </a>
+                            </td>
+                            <td>{{ machine.make }} {{ machine.model }}</td>
+                            <td>
+                                {% if machine.operational_state == "running" %}
+                                    Running
+                                {% elif machine.operational_state == "running_with_faults" %}
+                                    Running With Faults
+                                {% elif machine.operational_state == "down" %}
+                                    Down
+                                {% else %}
+                                    {{ machine.operational_state }}
+                                {% endif %}
+                            </td>
+                            <td>{{ machine.current_meter_reading }}</td>
+                            <td>
+                                {% if machine.open_inspection_id %}
+                                    Open by {{ machine.open_operator_name }}
+                                {% else %}
+                                    Available 
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if machine.open_inspection_id %}
+                                    {% if machine.open_operator_id == user.user_id %}
+                                        <a href="{{ url_for('new_inspection', machine_id=machine.machine_id) }}">
+                                            Update / Close
+                                        </a>
+                                    {% else %}
+                                        <a href="{{ url_for('machine_profile', machine_id=machine.machine_id) }}">
+                                            View
+                                        </a>
+                                    {% endif %}
+                                {% else %}
+                                    <a href="{{ url_for('new_inspection', machine_id=machine.machine_id) }}">
+                                        Inspect
+                                    </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            {% else %}
+                <p>No machines available.</p>
+            {% endif %}
+        </div>
+
+        <div class="card">
+            <h2>My Recent Inspections</h2>
+
+            {% if recent_insepctions and recent_inspections|length > 0 %}
+                <table>
+                    <tr>
+                        <th>Inspection</th>
+                        <th>Machine</th>
+                        <th>Status</th>
+                        <th>Passed</th>
+                        <th>Date</th>
+                    </tr>
+
+                    {% for inspection in recent_inspection %}
+                        <tr>
+                            <td>{{ inspection.inspection_id }}</td>
+                            <td>
+                                {{ inspection.unit_number }} - 
+                                {{ inspection.make }} {{ inspection.model }}
+                            </td>
+                            <td>{{ inspection.status }}</td>
+                            <td>{{ "Yes" if inspection.passed == 1 else "No" }}</td>
+                            <td>{{ inspeciton.inspection_date }}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            {% else %}
+                <p>No recent inspections.</p>
+            {% endif %}
+        </div>
+
+    </div>
     </body>
 </html>
