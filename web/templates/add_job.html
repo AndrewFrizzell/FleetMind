@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Add Job</title>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>Created New Job</h1>
+                {% include "partials/navbar.html" %}
+            </div>
+        </div>
+
+        <div class="card">
+            <form method="POST">
+
+                <label><strong>Job Name</strong></label>
+                <br>
+                <input type="text" name="name" required>
+
+                <br><br>
+
+                <label><strong>Location</strong></label>
+                <br>
+                <input type="text" name="location">
+
+                <br><br>
+
+                <button type="submit" class="primary">
+                    Created Job
+                </button>
+                
+            </form>
+        </div>
+
+    </div>
+    
+</body>
+</html>

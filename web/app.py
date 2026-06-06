@@ -40,7 +40,16 @@ from logic import (
             add_work_order_event,
             get_work_order_timeline,
             get_inspections_for_operator,
-            get_operator_machine_list
+            get_operator_machine_list,
+            get_jobs_for_foreman,
+            get_machines_for_job,
+            get_job_by_id,
+            get_active_jobs,
+            create_job,
+            get_machines_available_for_job,
+            assign_machine_to_job,
+            get_open_work_orders_for_job
+
 
 )
 
@@ -147,8 +156,21 @@ def dashboard():
         )
 
     if role == "foreman":
-        return render_template("dashboard_foreman.html", user=session)
-    
+        conn = get_connection()
+
+        jobs = get_jobs_for_foreman(
+            conn,
+            session["user_id"]
+        )
+
+        conn.close()
+
+        return render_template(
+            "dashboard_foreman.html",
+            user=session,
+            jobs=jobs
+        )
+
     if role == "equipment_manager":
         conn = get_connection()
         open_work_orders = get_open_work_orders(conn)
@@ -310,6 +332,8 @@ def new_inspection(machine_id):
 
     checklist_items = get_machine_checklist(conn, machine_id)
 
+    jobs = get_active_jobs(conn)
+
     existing_inspection = get_open_inspection_for_machine(conn, machine_id)
 
     if existing_inspection:
@@ -354,12 +378,18 @@ def new_inspection(machine_id):
             if opening_meter:
                 update_machine_meter(conn, machine_id, int(opening_meter))
 
+            job_id = request.form.get("job_id") or None
+
+            if job_id:
+                job_id = int(job_id)
+
             inspection = create_open_inspection(
                 conn,
                 machine_id=machine_id,
                 operator_id=session["user_id"],
                 opening_meter=opening_meter,
-                notes=notes
+                notes=notes,
+                job_id=job_id
             )
 
             inspection_id = inspection["inspection_id"]
@@ -392,7 +422,8 @@ def new_inspection(machine_id):
         user=session,
         machine=machine,
         checklist_items=checklist_items,
-        existing_inspection=existing_inspection
+        existing_inspection=existing_inspection,
+        jobs=jobs
     )
 
 @app.route("/manager/machines/<int:machine_id>/checklist", methods=["GET"])
@@ -601,6 +632,99 @@ def manager_work_orders():
     finally:
         conn.close()
 
+@app.route("/jobs/<int:job_id>")
+@login_required
+def job_detail(job_id):
+
+    conn = get_connection()
+
+    job = get_job_by_id(conn, job_id)
+    open_work_orders = get_open_work_orders_for_job(conn, job_id)
+
+    if job is None:
+        conn.close()
+        return "Job not found", 404
+    
+    machines = get_machines_for_job(conn, job_id)
+    unassigned_machines = get_machines_available_for_job(conn, job_id)
+
+    print("AVAILABLE MACHINES:", len(unassigned_machines))
+    for machine in unassigned_machines:
+        print(dict(machine))
+
+
+    conn.close()
+
+    return render_template(
+        "job_detail.html",
+        user=session,
+        job=job,
+        machines=machines,
+        unassigned_machines=unassigned_machines,
+        open_work_orders=open_work_orders
+    )
+
+@app.route("/foreman/jobs/add", methods=["GET", "POST"])
+@login_required
+def foreman_add_job():
+    if session.get("role") != "foreman":
+        return "Forbidden", 403
+    
+    if request.method == "POST":
+        name = request.form.get("name", "").strip()
+        location = request.form.get("location", "").strip()
+    
+        if not name:
+            flash("Job name is required.")
+            return redirect(url_for("foreman_add_job"))
+
+        conn = get_connection()
+
+        job_id = create_job(
+            conn,
+            name,
+            location,
+            session["user_id"]
+        )
+
+        conn.close()
+
+        flash("Job created.")
+        return redirect(url_for("job_detail", job_id=job_id))
+
+    return render_template(
+        "add_job.html",
+        user=session
+    )
+
+@app.route("/jobs/<int:job_id>/assign-machine", methods=["POST"])
+@login_required
+def assign_machine_to_job_route(job_id):
+
+    if session.get("role") != "foreman":
+        return "Forbidden", 403
+    
+    machine_ids = request.form.get("machine_ids")
+
+    if not machine_ids:
+        flash("Select at least one machine.")
+        return redirect(url_for("job_detail", job_id=job_id))
+    
+    conn = get_connection()
+
+    try:
+        for machine_id in machine_ids:
+            assign_machine_to_job(
+                conn,
+                int(machine_id),
+                job_id
+            )
+        flash("Machines assigned to job.")
+    
+    finally:
+        conn.close()
+
+    return redirect(url_for("job_detail", job_id=job_id))
 
 
 if __name__ == "__main__":

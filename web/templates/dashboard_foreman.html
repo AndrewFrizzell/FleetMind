@@ -7,17 +7,46 @@
     </head>
     <body>
         <div class="container">
-            <div class="card">
-                <h1>Equipment Manager Dashboard</h1>
-                {% include "partials/navbar.html" %}
+            <div class="header">
+                <div>
+                    <h1>Foreman Dashboard</h1>
+                    {% include "partials/navbar.html" %}
+                </div>
             </div>
+
         <div class="card">
-            <nav>
-                <a href="{{ url_for('dashboard') }}">Dashboard</a>
-                <a href="{{ url_for('new_inspection') }}"></a>
-            </nav>
+            <h2>My Jobs</h2>
+
+            <a href="{{ url_for('foreman_add_job') }}">
+                Create New Job
+            </a>
+
+            {% if jobs and jobs|length > 0 %}
+                <table>
+                    <tr>
+                        <th>Jobs</th>
+                        <th>Location</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+
+                    {% for job in jobs %}
+                        <tr>
+                            <td>{{ job.name }}</td>
+                            <td>{{ job.location or "N/A" }}</td>
+                            <td>{{ "Active" if job.active == 1 else "Inactive" }}</td>
+                            <td>
+                                <a href="{{ url_for('job_detail', job_id=job.job_id) }}">
+                                    View Job
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            {% else %}
+                <p>No jobs assigned.</p>
+            {% endif %}
         </div>
-            <p>Next: show open work orders, assign/group into mechanic assignmetns.</p>
-        </div>
+           
     </body>
 </html>

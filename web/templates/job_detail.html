@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Document</title>
+</head>
+
+<body>
+    <div class="container">
+        
+        <div class="header">
+            <div>
+                <h1>{{ job.name }}</h1>
+                {% include "partials/navbar.html" %}
+                <p class="muted">{{ job.location or "No location listed" }}</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Job Info</h2>
+            <p><strong>Foreman:</strong> {{ job.foreman_name }}</p>
+            <p><strong>Status:</strong> {{ "Active" if job.active == 1 else "Inactive" }}</p>
+        </div>
+
+        <div class="card">
+            <h2>Assign Machine</h2>
+
+            <form method="POST"
+                action="{{ url_for('assign_machine_to_job_route', job_id=job.job_id) }}">
+
+                    <table>
+                        <tr>
+                            <th>Select</th>
+                            <th>Unit</th>
+                            <th>Machine</th>
+                            <th>Current Job</th>
+                            <th>Status</th>
+                            <th>Meter</th>
+                        </tr>
+                    
+                        {% for machine in unassigned_machines %}
+                            <tr>
+                                <td>
+                                    <input type="checkbox" name="machine_ids" value="{{ machine.machine_id }}">
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('machine_profile', machine_id=machine.machine_id) }}">
+                                        {{ machine.unit_number }}
+                                    </a>
+                                </td>
+                                <td>{{ machine.make }} {{ machine.model }}</td>
+                                <td>
+                                    {% if machine.current_job_name %}
+                                        {{ machine.current_job_name }}
+                                    {% else %}
+                                        Unassigned
+                                    {% endif %}
+                                </td>
+                                <td>{{ machine.operational_state }}</td>
+                                <td>{{ machine.current_meter_reading }}</td>
+                            </tr>
+                        {% endfor %}
+                    </table>
+
+                <button type="submit" class="primary">
+                    Assign Selected Machines
+                </button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2>Machines on Job</h2>
+
+            {% if machines and machines|length > 0 %}
+                <table>
+                    <tr>
+                        <th>Unit</th>
+                        <th>Machine</th>
+                        <th>Status</th>
+                        <th>Meter</th>
+                        <th>Action</th>
+                    </tr>
+
+                    {% for machine in machines %}
+                        <tr>
+                            <td>
+                                <a href="{{ url_for('machine_profile', machine_id=machine.machine_id) }}">
+                                    {{ machine.unit_number }}
+                                </a>
+                            </td>
+                            <td>{{ machine.make }} {{ machine.model }}</td>
+                            <td>{{ machine.operational_state }}</td>
+                            <td>{{ machine.current_meter_reading }}</td>
+                            <td>
+                                <a href="{{ url_for('new_inspection', machine_id=machine.machine_id) }}">
+                                    Inspect
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            {% else %}
+                <p>No machines assigned to this job yet.</p>
+            {% endif %}
+        </div>
+
+         <div class="card">
+            <h2>Open Work Orders on Job</h2>
+
+            {% if open_work_orders and open_work_orders|length > 0%}
+                <table>
+                    <tr>
+                        <th>WO #</th>
+                        <th>Machine</th>
+                        <th>Status</th>
+                        <th>Priority</th>
+                        <th>Created</th>
+                        <th>notes</th>
+                    </tr>
+
+                    {% for wo in open_work_orders %}
+                        <tr>
+                            <td>
+                                <a href="{{ url_for('work_order_detail', work_order_id=wo.work_order_id)}}">
+                                    #{{ wo.work_order_id }}
+                                </a>
+                            </td>
+                            <td>
+                                {{ wo.unit_number }} -
+                                {{ wo.make }} {{ wo.model }}
+                            </td>
+                            <td>{{ wo.status }}</td>
+                            <td>{{ wo.priority }}</td>
+                            <td>{{ wo.created_at }}</td>
+                            <td>{{ wo.notes }}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            {% else %}
+                <p>No open work orders for this job.</p>
+            {% endif %}
+        </div>
+    </div>
+    
+</body>
+</html>

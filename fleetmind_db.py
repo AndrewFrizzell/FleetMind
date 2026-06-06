@@ -115,6 +115,7 @@ def create_tables(conn):
         inspection_id INTEGER PRIMARY KEY AUTOINCREMENT,
         machine_id INTEGER NOT NULL,
         operator_id INTEGER NOT NULL,
+        job_id INTEGER,
         inspection_date TEXT NOT NULL DEFAULT (datetime('now')),
         
         status TEXT NOT NULL DEFAULT 'open',
@@ -126,6 +127,7 @@ def create_tables(conn):
         passed INTEGER NOT NULL DEFAULT 1,
         FOREIGN KEY (machine_id) REFERENCES Machine(machine_id),
         FOREIGN KEY (operator_id) REFERENCES User(user_id)
+        FOREIGN KEY (job_id) REFERENCES Job(job_id)
     );
     """)
 

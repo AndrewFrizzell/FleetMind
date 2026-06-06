@@ -38,11 +38,7 @@
                             <td>{{ m.year }}</td>
                             <td>{{ m.operational_state }}</td>
                             <td>
-                                {% if m.current_job_id %}
-                                    {{ m.current_job_id }}
-                                {% else %}
-                                    Unassigned
-                                {% endif %}
+                                {{ m.job_name }}
                             </td>
                         </tr>
                     {% endfor %}
@@ -58,6 +54,8 @@
                 </a>
             </p>
         {% endif %}
+
+       
     </div>
 </body>
 </html>

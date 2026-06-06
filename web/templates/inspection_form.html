@@ -60,6 +60,25 @@
                     </div>
                 {% endif %}
 
+                <div class="form-group">
+                    <label for="job_id">Jobs</label>
+
+                    <select name="job_id" id="job_id">
+                        <option value="">--- Select Job ---</option>
+
+                        {% for job in jobs %}
+                            <option 
+                                value="{{ job.job_id }}"
+                                {% if machine.current_job_id == job.job_id %}
+                                    selected
+                                {% endif %}
+                            >
+                                {{ job.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
                 <h2>Checklist</h2>
 
                 <table>
