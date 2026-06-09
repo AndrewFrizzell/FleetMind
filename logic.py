@@ -301,6 +301,33 @@ def update_machine_operational_state(conn, machine_id, operational_state):
 
     conn.commit()
 
+def refresh_machine_operational_state(conn, machine_id):
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT operator_decision
+        FROM MachineFault
+        WHERE machine_id = ?
+            AND status = 'open'
+    """, (machine_id,))
+
+    open_faults = cur.fetchall()
+
+    if not open_faults:
+        new_state = "running"
+    elif any(fault["operator_decision"] == "down" for fault in open_faults):
+        new_state = 'down'
+    else: 
+        new_state = "running_with_faults"
+
+    cur.execute("""
+        UPDATE Machine
+        SET operational_state = ?
+        WHERE machine_id = ?
+    """, (new_state, machine_id))
+
+    conn.commit()
+
 def get_inspections_for_operator(conn, operator_id):
     cur = conn.cursor()
 
@@ -792,7 +819,7 @@ def complete_work_order(conn, work_order_id):
     cur = conn.cursor()
 
     cur.execute("""
-        SELECT assignment_id
+        SELECT assignment_id, machine_id
         FROM WorkOrder
         WHERE work_order_id = ?
     """, (work_order_id,))
@@ -802,7 +829,8 @@ def complete_work_order(conn, work_order_id):
     if row is None:
         raise ValueError("Work order does not exist.")
     
-    assignment_id = row[0]
+    assignment_id = row["assignment_id"]
+    machine_id = row["machine_id"]
 
     cur.execute("""
         UPDATE WorkOrder
@@ -817,9 +845,10 @@ def complete_work_order(conn, work_order_id):
         "work_order_completed",
         f"Work order #{work_order_id} was completed."
     )
-
     
     close_machine_fault_for_work_order(conn, work_order_id)
+
+    refresh_machine_operational_state(conn, machine_id)
 
     if assignment_id is not None:
         close_assignment_if_finished(conn, assignment_id)
