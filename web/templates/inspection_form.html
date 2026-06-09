@@ -87,6 +87,8 @@
                         <th>Description</th>
                         <th>Pass</th>
                         <th>Fail</th>
+                        <th>Note</th>
+                        <th>Decision</th>
                     </tr>
 
                     {% for item in checklist_items %}
@@ -105,6 +107,20 @@
                                         name="item_{{ item.master_item_id }}"
                                         value="fail"
                                         >
+                            </td>
+                            <td>
+                                <input 
+                                    type="text"
+                                    name="note_{{ item.master_item_id }}"
+                                    placeholder="Explain faild item"    
+                                >
+                            </td>
+                            <td>
+                                <select name="decision_{{ item.master_item_id }}">
+                                    <option value="">N/A</option>
+                                    <option value="continue_running">Continue Running</option>
+                                    <option value="down">Down/ Do Not Operate</option>
+                                </select>
                             </td>
                         </tr>
                     {% endfor %}

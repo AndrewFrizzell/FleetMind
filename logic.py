@@ -209,19 +209,26 @@ def save_inspection_items(conn, inspection_id, machine_id, operator_id, results)
     WHERE inspection_id = ?
     """, (inspection_id,))
 
-    for item_name, passed in results.items():
+    for item_name, data in results.items():
+        passed = data["passed"]
+        note = data.get("note", "")
+        operator_decision = data.get("operator_decision")
+
         cur.execute("""
             INSERT INTO InspectionItems (
                 inspection_id,
                 item_name,
                 passed,
+                operator_decision,
                 note
             )
-            VALUES (?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?)
         """, (inspection_id,
               item_name,
               int(passed),
-              ""
+              operator_decision,
+              note
+              
             ))
         if not passed:
             existing_fault = get_open_machine_fault(
@@ -277,10 +284,21 @@ def save_inspection_items(conn, inspection_id, machine_id, operator_id, results)
         SET passed = ?
         WHERE inspection_id = ?
     """, (
-        int(all(results.values())),
+        int(all(data["passed"] for data in results.values())),
         inspection_id
     ))
         
+    conn.commit()
+
+def update_machine_operational_state(conn, machine_id, operational_state):
+    cur = conn.cursor()
+
+    cur.execute("""
+        UPDATE Machine
+        SET operational_state = ?
+        WHERE machine_id = ?
+    """, (operational_state, machine_id))
+
     conn.commit()
 
 def get_inspections_for_operator(conn, operator_id):

@@ -51,7 +51,8 @@ from logic import (
             get_open_work_orders_for_job,
             get_recent_inspections_for_job,
             get_inspection_by_id,
-            get_inspection_items
+            get_inspection_items,
+            update_machine_operational_state
 
 
 )
@@ -400,10 +401,26 @@ def new_inspection(machine_id):
         results = {}
 
         for item in checklist_items:
-            field_name = f"item_{item['master_item_id']}"
-            passed_value = request.form.get(field_name)
+            item_id = item["master_item_id"]
 
-            results[item["name"]] = passed_value == "pass"
+            field_name = f"item_{item_id}"
+            note_field = f"note_{item_id}"
+            decision_field = f"decision_{item_id}"
+
+            passed_value = request.form.get(field_name)
+            item_note = request.form.get(note_field, "").strip()
+            operator_decision = request.form.get(decision_field)
+
+            results[item["name"]] = {
+                "passed": passed_value == "pass",
+                "note": item_note,
+                "operator_decision": operator_decision
+            }
+
+        should_close_due_to_down = any(
+            data["operator_decision"] == "down"
+            for data in results.values()
+        )
 
         save_inspection_items(
             conn,
@@ -413,6 +430,38 @@ def new_inspection(machine_id):
             results
         )
 
+        has_faild_items = any(
+            data["passed"] == False
+            for data in results.values()
+        )
+
+        if should_close_due_to_down:
+            update_machine_operational_state(
+                conn,
+                machine_id,
+                "down"
+            )
+
+            if existing_inspection:
+                close_inspection(
+                    conn,
+                    inspection_id,
+                    current_meter_input
+                )
+            else:
+                close_inspection(
+                    conn,
+                    inspection_id,
+                    opening_meter
+                )
+        
+        elif has_faild_items:
+
+            update_machine_operational_state(
+                conn,
+                machine_id,
+                "running_with_faults"
+            )
 
         conn.close()
         flash("Inspection saved.")
