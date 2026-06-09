@@ -141,6 +141,54 @@
                 <p>No open work orders for this job.</p>
             {% endif %}
         </div>
+
+        <div class="card">
+            <h2>Recent Inspections on Job</h2>
+            {% if recent_inspections and recent_inspections|length > 0 %}
+                <table>
+                    <tr>
+                        <th>Inspection #</th>
+                        <th>Machine</th>
+                        <th>Operator</th>
+                        <th>Status</th>
+                        <th>Passed</th>
+                        <th>Date</th>
+                        <th>Notes</th>
+                    </tr>
+
+                    {% for inspection in recent_inspections %}
+                        <tr>
+                            <td>
+                                <a href="{{ url_for('inspection_detail', inspection_id=inspection.inspection_id) }}">
+                                    #{{ inspection.inspection_id }}
+                                </a>
+                            </td>
+                            <td>
+                                {{ inspection.unit_number }} -
+                                {{ inspection.make }} {{ inspection.model }}
+                            </td>
+                            <td>
+                                {{ inspection.operator_name }}
+                            </td>
+                            <td>
+                                {{ inspection.status }}
+                            </td>
+                            <td>
+                                {{ "Yes" if inspection.passed == 1 else "No" }}
+                            </td>
+                            <td>
+                                {{ inspection.inspection_date }}
+                            </td>
+                            <td>
+                                {{ inspection.notes or "" }}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            {% else %}
+                <p>No recent inspections for this job.</p>
+            {% endif %}
+        </div>
     </div>
     
 </body>

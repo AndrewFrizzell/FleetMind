@@ -48,7 +48,10 @@ from logic import (
             create_job,
             get_machines_available_for_job,
             assign_machine_to_job,
-            get_open_work_orders_for_job
+            get_open_work_orders_for_job,
+            get_recent_inspections_for_job,
+            get_inspection_by_id,
+            get_inspection_items
 
 
 )
@@ -640,6 +643,7 @@ def job_detail(job_id):
 
     job = get_job_by_id(conn, job_id)
     open_work_orders = get_open_work_orders_for_job(conn, job_id)
+    recent_inspections = get_recent_inspections_for_job(conn, job_id)
 
     if job is None:
         conn.close()
@@ -655,13 +659,14 @@ def job_detail(job_id):
 
     conn.close()
 
-    return render_template(
+    return render_template (
         "job_detail.html",
         user=session,
         job=job,
         machines=machines,
         unassigned_machines=unassigned_machines,
-        open_work_orders=open_work_orders
+        open_work_orders=open_work_orders,
+        recent_inspections=recent_inspections
     )
 
 @app.route("/foreman/jobs/add", methods=["GET", "POST"])
@@ -725,6 +730,35 @@ def assign_machine_to_job_route(job_id):
         conn.close()
 
     return redirect(url_for("job_detail", job_id=job_id))
+
+@app.route("/inspections/<int:inspection_id>")
+@login_required
+def inspection_detail(inspection_id):
+
+    conn = get_connection()
+
+    inspection = get_inspection_by_id(
+        conn,
+        inspection_id
+    )
+
+    if inspection is None:
+        conn.close()
+        return "Inspection not found", 404
+    
+    inspection_items = get_inspection_items(
+        conn,
+        inspection_id
+    )
+
+    conn.close()
+
+    return render_template(
+        "inspection_detail.html",
+        user=session,
+        inspection=inspection,
+        inspection_items=inspection_items
+    )
 
 
 if __name__ == "__main__":

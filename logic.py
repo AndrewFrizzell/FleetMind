@@ -348,6 +348,63 @@ def get_operator_machine_list(conn):
 
     return cur.fetchall()
 
+def get_inspection_by_id(conn, inspection_id):
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT 
+            i.inspection_id,
+            i.machine_id,
+            i.operator_id,
+            i.job_id,
+            i.inspection_date,
+            i.status,
+            i.opening_meter,
+            i.closing_meter,
+            i.closed_at,
+            i.notes,
+            i.passed,
+
+            m.unit_number,
+            m.serial_number,
+            m.make,
+            m.model,
+            m.type,
+                
+            u.name AS operator_name,
+                
+            j.name AS job_name
+        FROM Inspections i 
+        JOIN Machine m
+            ON i.machine_id = m.machine_id
+        JOIN User u
+            ON i.operator_id = u.user_id
+        LEFT JOIN Job j
+            ON i.job_id = j.job_id
+        WHERE i.inspection_id = ?
+    """, (inspection_id,))
+
+    return cur.fetchone()
+
+def get_inspection_items(conn, inspection_id):
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT
+            inspection_item_id,
+            item_name,
+            passed,
+            operator_decision,
+            inspection_phase,
+            created_work_order,
+            note
+        FROM InspectionItems
+        WHERE inspection_id = ?
+        ORDER BY item_name ASC
+    """, (inspection_id,))
+
+    return cur.fetchall()
+
 #======================================
 # work orders
 #======================================
@@ -1328,5 +1385,35 @@ def get_open_work_orders_for_job(conn, job_id):
             AND wo.status != 'closed'
         ORDER BY wo.priority DESC, wo.created_at ASC
     """, (job_id,))
+
+    return cur.fetchall()
+
+def get_recent_inspections_for_job(conn, job_id):
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT 
+            i.inspection_id,
+            i.machine_id,
+            i.inspection_date,
+            i.status,
+            i.passed,
+            i.notes,
+                
+            m.unit_number,
+            m.make,
+            m.model,
+
+            u.name AS operator_name
+        FROM Inspections i
+        JOIN Machine m
+            ON i.machine_id = m.machine_id
+        JOIN User u
+            ON i.operator_id = u.user_id
+        WHERE i.job_id = ?
+            OR m.current_job_id = ?
+        ORDER BY i.inspection_date DESC
+        LIMIT 10
+    """, (job_id, job_id))
 
     return cur.fetchall()

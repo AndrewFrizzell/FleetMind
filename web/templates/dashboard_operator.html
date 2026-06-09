@@ -21,6 +21,7 @@
             {% if open_inspections and open_inspections|length > 0 %}
                 <table>
                     <tr>
+                        <th>Inspection #</th>
                         <th>Machine</th>
                         <th>Opened</th>
                         <th>Opening Meter</th>
@@ -29,6 +30,11 @@
 
                     {% for inspection in open_inspections %}
                         <tr>
+                            <td>
+                                <a href="{{ url_for('inspection_detail', inspection_id=inspection.inspection_id )}}">
+                                    {{ inspection.inspection_id}}
+                                </a>
+                            </td>
                             <td>
                                 {{ inspection.unit_number }} -
                                 {{ inspection.make }} {{ inspection.model }}

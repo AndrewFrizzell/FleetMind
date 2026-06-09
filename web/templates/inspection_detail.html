@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Inspection Detail</title>
+</head>
+<body>
+    <div class="container">
+
+        <div class="header">
+            <div>
+                <h1>Inspetion #{{ inspection.inspection_id }}</h1>
+                {% include "partials/navbar.html" %}
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Inspection Info</h2>
+
+            <p><strong>Status:</strong> {{ inspection.status }}</p>
+            <p><strong>Passed:</strong> {{ "Yes" if inspection.passed == 1 else "No" }}</p>
+            <p><strong>Date:</strong> {{ inspection.inspection_date }}</p>
+            <p><strong>Closed:</strong> {{ inspection.closed_at or "Not Closed"}}</p>
+
+            <p><strong>Opening Meter:</strong> {{ inspection.opening_meter or "N/A" }}</p>
+            <p><strong>Closing Meter:</strong> {{ inspection.closing_meter or "N/A"}}</p>
+
+            <p><strong>Operator:</strong> {{ inspection.operator_name }}</p>
+            <p><strong>Job:</strong> {{ inspection.job_name or "No job selected" }}</p>
+
+            <p><strong>Notes:</strong></p>
+            <p>{{ inspection.notes or "No notes." }}</p>
+        </div>
+
+        <div class="card">
+            <h2>Machine</h2>
+
+            <p>
+                <strong>Machine:</strong>
+                <a href="{{ url_for('machine_profile', machine_id=inspection.machine_id) }}">
+                    {{ inspection.unit_number }} - {{ inspection.make }} {{ inspection.model }}
+                </a>
+            </p>
+
+            <p><strong>Type:</strong> {{ inspection.type }}</p>
+            <p><strong>Serial:</strong> {{ inspection.serial_number }}</p>
+        </div>
+
+        <div class="card">
+            <h2>Checklist Results</h2>
+
+            {% if inspection_items and inspection_items|length > 0 %}
+                <table>
+                    <tr>
+                        <th>Item</th>
+                        <th>Passed</th>
+                        <th>Decision</th>
+                        <th>Phase</th>
+                        <th>Note</th>
+                    </tr>
+
+                    {% for item in inspection_items %}
+                        <tr>
+                            <td>{{ item.item_name }}</td>
+                            <td>{{ "Yes" if item.passed == 1 else "No" }}</td>
+                            <td>{{ item.operator_decision or "N/A" }}</td>
+                            <td>{{ item.inspection_phase }}</td>
+                            <td>{{ item.note or "" }}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            {% else %}
+                <p>No checklist items saved.</p>
+            {% endif %}
+        </div>
+    </div>
+    
+</body>
+</html>
