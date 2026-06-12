@@ -1198,6 +1198,33 @@ def get_open_faults_for_machine(conn, machine_id):
 
     return cur.fetchall()
 
+def remove_machine_from_job(conn, machine_id):
+    cur = conn.cursor()
+
+    cur.execute("""
+        UPDATE Machine
+        SET current_job_id = NULL
+        WHERE machine_id = ?
+    """, (machine_id,))
+
+    conn.commit()
+
+def get_machine_unit_number(conn, machine_id):
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT unit_number
+        FROM Machine
+        WHERE machine_id = ?
+    """, (machine_id,))
+
+    row = cur.fetchone()
+
+    if row is None:
+        return f"Machine #{machine_id}"
+    
+    return row["unit_number"]
+
 
 #==============================================
 # Users
@@ -1462,5 +1489,47 @@ def get_recent_inspections_for_job(conn, job_id):
         ORDER BY i.inspection_date DESC
         LIMIT 10
     """, (job_id, job_id))
+
+    return cur.fetchall()
+
+def add_job_event(
+        conn,
+        job_id,
+        event_type,
+        description,
+        user_id=None
+):
+    cur = conn.cursor()
+
+    cur.execute("""
+        INSERT INTO JobEvent (
+            job_id,
+            user_id,
+            event_type,
+            description        
+        )
+        VALUES (?, ?, ?, ?)
+    """, (
+        job_id,
+        user_id,
+        event_type,
+        description
+    ))
+
+    conn.commit()
+
+def get_job_events(conn, job_id):
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT
+            je.*,
+            u.name AS user_name
+        FROM JobEvent je
+        LEFT JOIN User u
+            ON je.user_id = u.user_id
+        WHERE je.job_id = ?
+        ORDER BY je.created_at DESC
+    """, (job_id,))
 
     return cur.fetchall()

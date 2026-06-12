@@ -52,7 +52,11 @@ from logic import (
             get_recent_inspections_for_job,
             get_inspection_by_id,
             get_inspection_items,
-            update_machine_operational_state
+            update_machine_operational_state,
+            remove_machine_from_job,
+            get_job_events,
+            add_job_event,
+            get_machine_unit_number
 
 
 )
@@ -691,20 +695,16 @@ def job_detail(job_id):
     conn = get_connection()
 
     job = get_job_by_id(conn, job_id)
-    open_work_orders = get_open_work_orders_for_job(conn, job_id)
-    recent_inspections = get_recent_inspections_for_job(conn, job_id)
 
     if job is None:
         conn.close()
         return "Job not found", 404
     
+    open_work_orders = get_open_work_orders_for_job(conn, job_id)
+    recent_inspections = get_recent_inspections_for_job(conn, job_id)
+    job_events = get_job_events(conn, job_id)
     machines = get_machines_for_job(conn, job_id)
     unassigned_machines = get_machines_available_for_job(conn, job_id)
-
-    print("AVAILABLE MACHINES:", len(unassigned_machines))
-    for machine in unassigned_machines:
-        print(dict(machine))
-
 
     conn.close()
 
@@ -715,7 +715,8 @@ def job_detail(job_id):
         machines=machines,
         unassigned_machines=unassigned_machines,
         open_work_orders=open_work_orders,
-        recent_inspections=recent_inspections
+        recent_inspections=recent_inspections,
+        job_events=job_events
     )
 
 @app.route("/foreman/jobs/add", methods=["GET", "POST"])
@@ -758,7 +759,7 @@ def assign_machine_to_job_route(job_id):
     if session.get("role") != "foreman":
         return "Forbidden", 403
     
-    machine_ids = request.form.get("machine_ids")
+    machine_ids = request.form.getlist("machine_ids")
 
     if not machine_ids:
         flash("Select at least one machine.")
@@ -773,7 +774,17 @@ def assign_machine_to_job_route(job_id):
                 int(machine_id),
                 job_id
             )
+
+            add_job_event(
+                conn,
+                job_id,
+                "machine_assigned"
+                f"Machine #{machine_id} was assigned to this job."
+            )
+
         flash("Machines assigned to job.")
+
+
     
     finally:
         conn.close()
@@ -809,7 +820,66 @@ def inspection_detail(inspection_id):
         inspection_items=inspection_items
     )
 
+@app.route("/jobs/<int:job_id>/remove-machine", methods=["POST"])
+@login_required
+def remove_machine_from_job_route(job_id):
+    if session.get("role") != "foreman":
+        return "Forbidden", 403
+    
+    machine_id = request.form.get("machine_id")
 
+    if not machine_id:
+        flash("Missing machine.")
+        return redirect(url_for("job_detail", job_id=job_id))
+    
+    conn = get_connection()
+
+    remove_machine_from_job(
+        conn,
+        int(machine_id)
+    )
+
+    unit_number = get_machine_unit_number(conn, int(machine_id))
+
+    add_job_event(
+        conn,
+        job_id,
+        "machine_removed",
+        f"Machine #{unit_number} was removed from this job.",
+        session["user_id"]
+    )
+
+    conn.close()
+
+    flash("Machine removed from job.")
+    return redirect(url_for("job_detail", job_id=job_id))
+
+@app.route("/jobs/<int:job_id>/comments/add", methods=["POST"])
+@login_required
+def add_job_comment_route(job_id):
+    if session.get("role") != "foreman":
+        return "Forbidden", 403
+
+    comment = request.form.get("comment", "").strip()
+
+    if not comment:
+        flash("Comment cannot be empty.")
+        return redirect(url_for("job_detail", job_id=job_id))
+    
+    conn = get_connection()
+
+    add_job_event(
+        conn,
+        job_id,
+        "foreman_comment",
+        comment,
+        session["user_id"]
+    )
+
+    conn.close()
+
+    flash("comment added.")
+    return redirect(url_for("job_detail", job_id=job_id))
 if __name__ == "__main__":
     #run from /web with python app.py
     app.run(debug=True)

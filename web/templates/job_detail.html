@@ -80,6 +80,7 @@
                         <th>Status</th>
                         <th>Meter</th>
                         <th>Action</th>
+                        <th>Remove</th>
                     </tr>
 
                     {% for machine in machines %}
@@ -96,6 +97,15 @@
                                 <a href="{{ url_for('new_inspection', machine_id=machine.machine_id) }}">
                                     Inspect
                                 </a>
+                            </td>
+                            <td>
+                                <form method="POST"
+                                    action="{{ url_for('remove_machine_from_job_route', job_id=job.job_id) }}">
+                                    <input type="hidden" name="machine_id" value="{{ machine.machine_id }}">
+                                    <button type="submit">
+                                        Remove
+                                    </button>
+                                </form>
                             </td>
                         </tr>
                     {% endfor %}
@@ -187,6 +197,49 @@
                 </table>
             {% else %}
                 <p>No recent inspections for this job.</p>
+            {% endif %}
+        </div>
+
+        <div class="card">
+            <h2>Add Job Comment</h2>
+
+            <form method="POST" action="{{ url_for('add_job_comment_route', job_id=job.job_id)}}">
+                <textarea 
+                    name="comment"
+                    rows="4"
+                    style="width: 100%;"
+                    placeholder="Add job update, delay note, plan, or foreman comment.."
+                    required
+                ></textarea>
+
+                <br><br>
+
+                <button type="submit" class="primary">
+                    Add Comment
+                </button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2>Job Timeline</h2>
+
+            {% if job_events and job_events|length > 0 %}
+                {% for event in job_events %}
+                    <div style="margin-bottom: 16px;">
+                        <p>
+                            <strong>{{ event.event_type }}</strong>
+                            <span class="muted">- {{ event.created_at }}</span>
+                        </p>
+
+                        <p>{{ event.description }}</p>
+
+                        {% if event.user_name %}
+                            <p class="muted">By {{ event.user_name }}</p>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p>No job events yet.</p>
             {% endif %}
         </div>
     </div>

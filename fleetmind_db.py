@@ -37,6 +37,21 @@ def create_tables(conn):
     );
     """)
 
+    #job events 
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS JobEvent (
+        event_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        job_id INTEGER NOT NULL,
+        user_id INTEGER,
+        event_type TEXT NOT NULL,
+        description TEXT NOT NULL,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+
+        FOREIGN KEY (job_id) REFERENCES Job(job_id),
+        FOREIGN KEY (user_id) REFERENCES User(user_id)             
+    );
+    """)
+
     # Machine table
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS Machine (
