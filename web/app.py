@@ -60,7 +60,8 @@ from logic import (
             add_work_order_part,
             get_work_order_parts,
             update_work_order_part_status,
-            get_work_order_part_by_id
+            get_work_order_part_by_id,
+            get_all_work_order_parts
 
 
 )
@@ -977,6 +978,25 @@ def update_work_order_part_status_route(work_order_id, part_id):
 
     flash("Part status updated.")
     return redirect(url_for("work_order_detail", work_order_id=work_order_id))
+
+@app.route("/manager/parts")
+@login_required
+def manager_parts():
+
+    if session.get("role") != "equipment_manager":
+        return "Forbidden", 403
+    
+    conn = get_connection()
+
+    parts = get_all_work_order_parts(conn)
+
+    conn.close()
+
+    return render_template(
+        "manager_parts.html",
+        user=session,
+        parts=parts
+    )
 
 
 

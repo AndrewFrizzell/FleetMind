@@ -107,6 +107,51 @@
         </div>
 
         <div class="card">
+            <h2>Parts</h2>
+
+            {% if parts and parts|length > 0 %}
+                <table>
+                    <tr>
+                        <th>Part Number</th>
+                        <th>Description</th>
+                        <th>Qty</th>
+                        <th>Status</th>
+                        <th>Note</th>
+                        <th>Added</th>
+                    </tr>
+
+                    {% for part in parts %}
+                        <tr>
+                            <td>{{ part.part_number }}</td>
+                            <td>{{ part.description }}</td>
+                            <td>{{ part.quantity }}</td>
+                            <td>
+                                <form method="POST" 
+                                    action="{{ url_for('update_work_order_part_status_route', work_order_id=work_order.work_order_id, part_id=part.part_id) }}">
+
+                                    <select name="status">
+                                        <option value="needed" {{ "selected" if part.status == "needed" else "" }}>Needed</option>
+                                        <option value="ordered" {{ "selected" if part.status == "ordered" else "" }}>Ordered</option>
+                                        <option value="received" {{ "selected" if part.status == "received" else "" }}>Received</option>
+                                        <option value="installed" {{ "selected" if part.status == "installed" else "" }}>Installed</option>
+                                    </select>
+
+                                    <button type="submit">
+                                        update
+                                    </button>
+                                </form>
+                            </td>
+                            <td>{{ part.note or "" }}</td>
+                            <td>{{ part.created_at }}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            {% else %}
+                <p>No parts added yet.</p>
+            {% endif %}
+        </div>
+
+        <div class="card">
             <h2>Add Part</h2>
 
             <form method="POST" action="{{ url_for('add_work_order_part_route', work_order_id=work_order.work_order_id) }}">
@@ -151,51 +196,6 @@
 
             </form>
         
-        </div>
-
-        <div class="card">
-            <h2>Parts</h2>
-
-            {% if parts and parts|length > 0 %}
-                <table>
-                    <tr>
-                        <th>Part Number</th>
-                        <th>Description</th>
-                        <th>Qty</th>
-                        <th>Status</th>
-                        <th>Note</th>
-                        <th>Added</th>
-                    </tr>
-
-                    {% for part in parts %}
-                        <tr>
-                            <td>{{ part.part_number }}</td>
-                            <td>{{ part.description }}</td>
-                            <td>{{ part.quantity }}</td>
-                            <td>
-                                <form method="POST" 
-                                    action="{{ url_for('update_work_order_part_status_route', work_order_id=work_order.work_order_id, part_id=part.part_id) }}">
-
-                                    <select name="status">
-                                        <option value="needed" {{ "selected" if part.status == "needed" else "" }}>Needed</option>
-                                        <option value="ordered" {{ "selected" if part.status == "ordered" else "" }}>Ordered</option>
-                                        <option value="received" {{ "selected" if part.status == "received" else "" }}>Received</option>
-                                        <option value="installed" {{ "selected" if part.status == "installed" else "" }}>Installed</option>
-                                    </select>
-
-                                    <button type="submit">
-                                        update
-                                    </button>
-                                </form>
-                            </td>
-                            <td>{{ part.note or "" }}</td>
-                            <td>{{ part.created_at }}</td>
-                        </tr>
-                    {% endfor %}
-                </table>
-            {% else %}
-                <p>No parts added yet.</p>
-            {% endif %}
         </div>
 
 

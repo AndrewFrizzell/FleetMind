@@ -797,6 +797,46 @@ def get_work_order_part_by_id(conn, part_id):
 
     return cur.fetchone()
 
+def get_all_work_order_parts(conn):
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT 
+            p.part_id,
+            p.work_order_id,
+            p.part_number,
+            p.description,
+            p.quantity,
+            p.status,
+            p.note,
+            p.created_at,
+                
+            wo.status AS work_order_status,
+                
+            m.machine_id,
+            m.unit_number,
+            m.make,
+            m.model
+                
+        FROM WorkOrderPart p 
+        JOIN WorkOrder wo
+            ON p.work_order_id = wo.work_order_id
+        JOIN Machine m
+            ON wo.machine_id = m.machine_id
+        ORDER BY 
+            wo.created_at DESC,
+            CASE p.status
+                WHEN 'needed' THEN 1
+                WHEN 'ordered' THEN 2
+                WHEN 'received' THEN 3
+                WHEN 'installed' then 4
+                ELSE 5
+            END,
+            p.created_at DESC
+    """)
+
+    return cur.fetchall()
+
 
 
 #=====================================

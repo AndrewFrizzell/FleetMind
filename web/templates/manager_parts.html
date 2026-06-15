@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Parts</title>
+</head>
+
+<body>
+    <div class="container">
+
+        <div class="header">
+            <div>
+                <h1>Parts Dashboard</h1>
+                {% include "partials/navbar.html" %}
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>All Work Order Parts</h2>
+
+            {% if parts and parts|length > 0 %}
+                <table>
+                    <tr>
+                        <th>Part #</th>
+                        <th>Description</th>
+                        <th>Qty</th>
+                        <th>Status</th>
+                        <th>Machine</th>
+                        <th>Work Order</th>
+                        <th>WO Status</th>
+                        <th>Added</th>
+                    </tr>
+
+                    {% for part in parts %}
+                        <tr>
+                            <td>{{ part.part_number or "N/A" }}</td>
+                            <td>{{ part.description }}</td>
+                            <td>{{ part.quantity }}</td>
+                            <td>
+                                <form method="POST"
+                                     action="{{ url_for('update_work_order_part_status_route', work_order_id=part.work_order_id, part_id=part.part_id) }}">
+                                    
+                                     <select name="status">
+                                        <option value="needed" {{ "selected" if part.status == "needed" else "" }}>Needed</option>
+                                        <option value="ordered" {{ "selected" if part.status == "ordered" else "" }}>Ordered</option>
+                                        <option value="received" {{ "selected" if part.status == "received" else "" }}>Received</option>
+                                        <option value="installed" {{ "selected" if part.status == "installed" else "" }}>Installed</option>
+                                    </select>
+
+                                    <button type="submit">Update</button>
+                                </form>
+                            </td>
+                            <td>
+                                <a href="{{ url_for('machine_profile', machine_id=part.machine_id) }}">
+                                    {{ part.unit_number }} - {{ part.make }} {{ part.model }}
+                                </a>
+                            </td>
+                            <td>
+                                <a href="{{ url_for('work_order_detail', work_order_id=part.work_order_id) }}">
+                                    {{ part.work_order_id }}
+                                </a>
+                            </td>
+                            <td>{{ part.work_order_status }}</td>
+                            <td>{{ part.created_at }}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            {% else %}
+                <p>No parts found.</p>
+            {% endif %}
+        </div>
+    </div>
+    
+</body>
+</html>
