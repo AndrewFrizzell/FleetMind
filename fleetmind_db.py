@@ -249,6 +249,7 @@ def create_tables(conn):
         fault_id INTEGER PRIMARY KEY AUTOINCREMENT,
         machine_id INTEGER NOT NULL,
         item_name TEXT NOT NULL,
+        operator_decision TEXT,
         status TEXT NOT NULL DEFAULT 'open',
         first_reported_at TEXT NOT NULL DEFAULT (datetime('now')),
         last_reported_at TEXT,
@@ -257,6 +258,8 @@ def create_tables(conn):
                    
         FOREIGN KEY (machine_id) REFERENCES Machine(machine_id),
         FOREIGN KEY (work_order_id) REFERENCES WorkOrder(work_order_id)
+                   
+        UNIQUE(machine_id, item_name, status)
         
     );
     """)

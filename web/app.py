@@ -303,40 +303,6 @@ def add_work_order_comment_route(work_order_id):
     flash("Comment added.")
     return redirect(url_for("work_order_detail", work_order_id=work_order_id))
 
-@app.route("/mechanic/complete-work-order", methods=["POST"])
-@login_required
-def mechanic_complete_work_order():
-
-    if session.get("role") != "mechanic":
-        return "Forbidden", 403
-    
-    work_order_id = request.form.get("work_order_id")
-
-    if not work_order_id:
-        flash("Missing work order.")
-        return redirect(url_for("dashboard"))
-    
-    conn = get_connection()
-
-    try:
-        complete_work_order(conn, int(work_order_id))
-
-        cur = conn.cursor()
-        cur.execute("""
-            SELECT work_order_id, status, completed_at
-            FROM WorkOrder
-            WHERE work_order_id = ?
-        """, (int(work_order_id),))
-
-        flash(f"Work order #{work_order_id} completed.")
-    except Exception as e:
-        print(f"error", e)
-        conn.rollback()
-        flash(f"Error: {e}")
-    finally:
-        conn.close()
-    return redirect(url_for("dashboard"))
-
 @app.route("/machines/<int:machine_id>/inspect", methods=["GET", "POST"])
 @login_required
 def new_inspection(machine_id):
@@ -1030,17 +996,32 @@ def update_work_order_status_route(work_order_id):
 
         if new_status == "repair_complete":
             cur = conn.cursor()
-
+            
             cur.execute("""
                 SELECT machine_id
                 FROM WorkOrder
                 WHERE work_order_id = ?
-            """, (work_order_id,))
-
+             """, (work_order_id,))
+            
             row = cur.fetchone()
 
             if row:
                 machine_id = row["machine_id"]
+
+                print("REPAIR COMPLETE BLOCK RUNNING")
+                print("WORK ORDER:", work_order_id)
+                print("Machine:", machine_id)
+
+                
+                cur.execute("""
+                    SELECT fault_id, item_name, status, operator_decision, work_order_id
+                    FROM MachineFault
+                    WHERE machine_id = ?
+                """, (machine_id,))
+
+                print("FAULTS AFTER CLOSE:")
+                for fault in cur.fetchall():
+                    print(dict(fault))
 
                 close_machine_fault_for_work_order(
                     conn,
@@ -1064,6 +1045,7 @@ def update_work_order_status_route(work_order_id):
 
     except Exception as e:
         conn.rollback()
+        print("ERROR UPDATING WORK ORDER STATUS:", e)
         flash(f"Error updating work order status: {e}")
 
     finally:

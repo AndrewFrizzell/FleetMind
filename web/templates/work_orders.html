@@ -7,82 +7,61 @@
 </head>
 <body>
     <div class="contianer">
-         <div class="card">
-            {% include "partials/navbar.html" %}
-            <h1>Work Orders</h1>
-        </div>
-        <h1>Work Orders</h1>
-    </div>
 
-    <div class="card">
-
-    {% if work_orders %}
-
-        {% for wo in work_orders %}
-
-        <div class="work-order-card">
-
-            <div class="work-order-top">
-
-                <div>
-                    <h3>
-                        WO #{{ wo.work_order_id }}
-                    </h3>
-
-                    <p>
-                        {{ wo.serial_number }}
-                        -
-                        {{ wo.make }} {{ wo.model }}
-                    </p>
-                </div>
-
-                <div>
-                    <span class="status-badge">
-                        {{ wo.status }}
-                    </span>
-                </div>
-
+        <div class="header">
+            <div>
+                <h1>Work Orders</h1>
+                {% include "partials/navbar.html" %}
+                
             </div>
-
-            <hr>
-
-            <p>
-                <strong>Notes:</strong><br>
-                {{ wo.notes }}
-            </p>
-
-            <p>
-                <strong>Priority:</strong>
-                {{ wo.priority }}
-            </p>
-
-            <p>
-                <strong>Assigned Mechanic:</strong>
-
-                {% if wo.mechanic_name %}
-                    {{ wo.mechanic_name }}
-                {% else %}
-                    Unassigned
-                {% endif %}
-            </p>
-
-            <p>
-                <strong>Created:</strong>
-                {{ wo.created_at }}
-            </p>
-
         </div>
 
-        <br>
+        <div class="card">
+            <h2>All Work Orders</h2>
 
-        {% endfor %}
+            {% if work_orders and work_orders|length > 0 %}
+                <table>
+                    <tr>
+                        <th>WO #</th>
+                        <th>Machine</th>
+                        <th>Status</th>
+                        <th>Priority</th>
+                        <th>Assigned To</th>
+                        <th>Created</th>
+                        <th>Notes</th>
+                    </tr>
 
-    {% else %}
+                    {% for wo in work_orders %}
+                        <tr>
+                            <td>
+                                <a href="{{ url_for('work_order_detail', work_order_id=wo.work_order_id) }}">
+                                    #{{ wo.work_order_id }}
+                                </a>
+                            </td>
 
-        <p>No work orders found.</p>
+                            <td>
+                                <a href="{{ url_for('machine_profile', machine_id=wo.machine_id) }}">
+                                    {{ wo.unit_number }}-
+                                    {{ wo.make }} {{ wo.model }}
+                                </a>
+                            </td>
 
-    {% endif %}
+                            <td>{{ wo.status }}</td>
+                            <td>{{ wo.priority }}</td>
+                            <td>{{ wo.mechanic_name or "Unassigned" }}</td>
+                            <td>{{ wo.created_at }}</td>
+                            <td>{{ wo.notes or "" }}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            {% else %}
+                <p>No work orders found.</p>
+            {% endif %}
 
-</div>
+        </div>
+    
+
+       
+    </div>
 </body>
 </html>

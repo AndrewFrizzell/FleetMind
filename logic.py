@@ -245,7 +245,8 @@ def save_inspection_items(conn, inspection_id, machine_id, operator_id, results)
                 fault_id = create_machine_fault(
                     conn,
                     machine_id,
-                    item_name
+                    item_name,
+                    operator_decision
                 )
                 cur.execute("""
                     INSERT INTO WorkOrder (
@@ -558,9 +559,9 @@ def get_work_orders_for_jobs(conn, job_id, include_completed=False):
     return cursor.fetchall()
 
 def get_all_work_orders(conn): 
-    cursor = conn.cursor()
+    cur = conn.cursor()
 
-    cursor.execute("""
+    cur.execute("""
         SELECT
             wo.work_order_id,
             wo.assigned_to,
@@ -570,6 +571,8 @@ def get_all_work_orders(conn):
             wo.created_at,
             wo.assigned_to,
             
+            m.unit_number,
+            m.machine_id,
             m.serial_number,
             m.type,
             m.make,
@@ -583,10 +586,19 @@ def get_all_work_orders(conn):
         LEFT JOIN User u
             ON wo.assigned_to = u.user_id
                    
-        ORDER BY wo.created_at DESC
+        ORDER BY 
+        CASE wo.status
+            WHEN 'repair_complete' THEN 1
+            WHEN 'waiting_on_parts' THEN 2
+            WHEN 'in_progresss' THEN 3
+            WHEN 'assigned' THEN 4
+            WHEN 'open' THEN 5
+            WHEN 'closed' THEN 6
+        END,
+        wo.created_at DESC
     """)
 
-    return cursor.fetchall()
+    return cur.fetchall()
 
 def get_open_machine_fault(conn, machine_id, item_name):
     cur = conn.cursor()
@@ -602,18 +614,19 @@ def get_open_machine_fault(conn, machine_id, item_name):
 
     return cur.fetchone()
 
-def create_machine_fault(conn, machine_id, item_name):
+def create_machine_fault(conn, machine_id, item_name, operator_decision=None):
     cur = conn.cursor()
 
     cur.execute("""
         INSERT INTO MachineFault (
             machine_id,
             item_name,
+            operator_decision,
             status,
             last_reported_at        
         )
-        VALUES (?, ?, 'open', datetime('now'))
-    """, (machine_id, item_name))
+        VALUES (?, ?, ?, 'open', datetime('now'))
+    """, (machine_id, item_name, operator_decision))
 
     conn.commit()
 
@@ -897,7 +910,7 @@ def create_mechanic_assignment(conn, mechanic_id, work_order_ids):
             UPDATE WorkOrder
             SET assigned_to = ?,
                 assignment_id = ?,
-                status = 'in_progress'
+                status = 'assigned'
             WHERE work_order_id = ? 
         """, (mechanic_id, assignment_id, work_order_id))
 

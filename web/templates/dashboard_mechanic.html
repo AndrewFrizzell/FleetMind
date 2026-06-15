@@ -29,7 +29,6 @@
                                     <th>Notes</th>
                                     <th>Status</th>
                                     <th>Priority</th>
-                                    <th>Action</th>
                                 </tr>
                                 {% for wo in item.work_orders %}
                                     <tr>
@@ -42,16 +41,6 @@
                                         <td>{{ wo.notes }}</td>
                                         <td>{{ wo.status }}</td>
                                         <td>{{ wo.priority }}</td>
-                                        <td>
-                                            {% if wo.status != "closed" %}
-                                                <form method="POST" action="/mechanic/complete-work-order">
-                                                    <input type="hidden" name="work_order_id" value="{{ wo.work_order_id }}">
-                                                    <button type="submit">Completed</button>
-                                                </form>
-                                            {% else %}
-                                                Closed
-                                            {% endif %}
-                                        </td>
                                     </tr>
                                 {% endfor %}
                             </table>
