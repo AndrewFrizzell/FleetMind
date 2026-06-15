@@ -56,7 +56,9 @@ from logic import (
             remove_machine_from_job,
             get_job_events,
             add_job_event,
-            get_machine_unit_number
+            get_machine_unit_number,
+            add_work_order_part,
+            get_work_order_parts
 
 
 )
@@ -258,6 +260,7 @@ def work_order_detail(work_order_id):
 
     work_order = get_work_order_by_id(conn, work_order_id)
     timeline = get_work_order_timeline(conn, work_order_id)
+    parts = get_work_order_parts(conn, work_order_id)
 
     conn.close()
 
@@ -268,7 +271,8 @@ def work_order_detail(work_order_id):
         "work_order_detail.html",
         user=session,
         work_order=work_order,
-        timeline=timeline
+        timeline=timeline,
+        parts=parts
     )
 
 @app.route("/work-orders/<int:work_order_id>/comments/add", methods=["POST"])
@@ -880,6 +884,62 @@ def add_job_comment_route(job_id):
 
     flash("comment added.")
     return redirect(url_for("job_detail", job_id=job_id))
+
+@app.route("/work-orders/<int:work_order_id>/parts/add", methods=["POST"])
+@login_required
+def add_work_order_part_route(work_order_id):
+
+    if session.get("role") not in ["mechanic", "equipment_manager"]:
+        return "Forbidden", 403
+    
+    part_number = request.form.get("part_number", "").strip()
+    description = request.form.get("description", "").strip()
+    quantity = request.form.get("quantity") or 1
+    status = request.form.get("status") or "needed"
+    note = request.form.get("note", "").strip()
+
+    if not description:
+        flash("Description is required.")
+        return redirect(
+            url_for(
+                "work_order_detail",
+                work_order_id=work_order_id
+            )
+        )
+    
+    conn = get_connection()
+
+    add_work_order_part(
+        conn,
+        work_order_id,
+        part_number,
+        description,
+        float(quantity),
+        status,
+        note
+    )
+
+    add_work_order_event(
+        conn,
+        work_order_id,
+        "part_added",
+        f"Part added: {description} | Qty: {quantity} | Status: {status}",
+        session["user_id"]
+    )
+
+    conn.close()
+
+    flash("Part added.")
+
+    return redirect(
+        url_for(
+            "work_order_detail",
+            work_order_id=work_order_id
+        )
+    )
+
+
+
 if __name__ == "__main__":
     #run from /web with python app.py
     app.run(debug=True)

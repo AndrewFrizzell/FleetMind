@@ -257,6 +257,23 @@ def create_tables(conn):
 
     conn.commit()
 
+    #work order parts table 
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS WorkOrderPart (
+        part_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        work_order_id INTEGER NOT NULL,
+        part_number TEXT,
+        description TEXT NOT NULL,
+        quantity REAL NOT NULL DEFAULT 1,
+        status TEXT NOT NULL DEFAULT 'needed',
+        note TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                   
+        FOREIGN KEY (work_order_id) REFERENCES WorkOrder(work_order_id)
+
+    );
+    """)
+
 if __name__ == "__main__":
     conn = get_connection()   
     create_tables(conn)

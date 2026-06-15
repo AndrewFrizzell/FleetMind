@@ -729,6 +729,52 @@ def get_work_order_timeline(conn, work_order_id):
 
     return cur.fetchall()
 
+def add_work_order_part(
+    conn,
+    work_order_id,
+    part_number,
+    description,
+    quantitiy,
+    status,
+    note
+):
+    cur = conn.cursor()
+
+    cur.execute("""
+        INSERT INTO WorkOrderPart (
+            work_order_id,
+            part_number,
+            description,
+            quantity,
+            status,
+            note
+        )
+        VALUES (?, ?, ?, ?, ?, ?)
+    """, (
+        work_order_id,
+        part_number,
+        description,
+        quantitiy,
+        status,
+        note
+    ))
+
+    conn.commit()
+
+    return cur.lastrowid
+
+def get_work_order_parts(conn, work_order_id):
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT *
+        FROM WorkOrderPart
+        WHERE work_order_id = ?
+        ORDER BY created_at DESC
+    """, (work_order_id,))
+
+    return cur.fetchall()
+
 
 
 #=====================================

@@ -106,6 +106,83 @@
             
         </div>
 
+        <div class="card">
+            <h2>Add Part</h2>
+
+            <form method="POST" action="{{ url_for('add_work_order_part_route', work_order_id=work_order.work_order_id) }}">
+                <label><strong>Part Number</strong></label>
+                <br>
+                <input type="text" name="part_number">
+
+                <br><br>
+
+                <label><strong>Description</strong></label>
+                <br>
+                <input type="text" name="description" required>
+
+                <br><br>
+
+                <label><strong>Quantity</strong></label>
+                <br>
+                <input type="number" name="quantity" step="0.01" value="1" required>
+
+                <br><br>
+
+                <label><strong>Status</strong></label>
+                <br>
+                <select name="status" required>
+                    <option value="needed">Needed</option>
+                    <option value="ordered">Ordered</option>
+                    <option value="recieved">Received</option>
+                    <option value="installed">Installed</option>
+                </select>
+
+                <br><br>
+
+                <label><strong>Note</strong></label>
+                <br>
+                <textarea name="note" rows="3" style="width: 100%;"></textarea>
+
+                <br><br>
+
+                <button type="submit" class="primary">
+                    Add Part
+                </button>
+
+            </form>
+        
+        </div>
+
+        <div class="card">
+            <h2>Parts</h2>
+
+            {% if parts and parts|length > 0 %}
+                <table>
+                    <tr>
+                        <th>Part Number</th>
+                        <th>Description</th>
+                        <th>Qty</th>
+                        <th>Status</th>
+                        <th>Note</th>
+                        <th>Added</th>
+                    </tr>
+
+                    {% for part in parts %}
+                        <tr>
+                            <td>{{ part.part_number }}</td>
+                            <td>{{ part.description }}</td>
+                            <td>{{ part.quantity }}</td>
+                            <td>{{ part.status }}</td>
+                            <td>{{ part.note or "" }}</td>
+                            <td>{{ part.created_at }}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            {% else %}
+                <p>No parts added yet.</p>
+            {% endif %}
+        </div>
+
 
     </div>   
 </body>
