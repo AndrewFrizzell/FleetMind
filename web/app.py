@@ -61,7 +61,10 @@ from logic import (
             get_work_order_parts,
             update_work_order_part_status,
             get_work_order_part_by_id,
-            get_all_work_order_parts
+            get_all_work_order_parts,
+            update_work_order_status,
+            close_machine_fault_for_work_order,
+            refresh_machine_operational_state
 
 
 )
@@ -785,8 +788,9 @@ def assign_machine_to_job_route(job_id):
             add_job_event(
                 conn,
                 job_id,
-                "machine_assigned"
-                f"Machine #{machine_id} was assigned to this job."
+                "machine_assigned",
+                f"Machine #{machine_id} was assigned to this job.",
+                session["user_id"]
             )
 
         flash("Machines assigned to job.")
@@ -996,6 +1000,80 @@ def manager_parts():
         "manager_parts.html",
         user=session,
         parts=parts
+    )
+
+@app.route("/work-orders/<int:work_order_id>/status", methods=["POST"])
+@login_required
+def update_work_order_status_route(work_order_id):
+
+    if session.get("role") not in ["mechanic", "equipment_manager"]:
+        return "Forbidden", 403
+    
+    new_status = request.form.get("status")
+
+    conn = get_connection()
+
+    try:
+        update_work_order_status(
+            conn,
+            work_order_id,
+            new_status
+        )
+
+        add_work_order_event(
+            conn,
+            work_order_id,
+            "status_updated",
+            f"Work order status changed to {new_status}.",
+            session["user_id"]
+        )
+
+        if new_status == "repair_complete":
+            cur = conn.cursor()
+
+            cur.execute("""
+                SELECT machine_id
+                FROM WorkOrder
+                WHERE work_order_id = ?
+            """, (work_order_id,))
+
+            row = cur.fetchone()
+
+            if row:
+                machine_id = row["machine_id"]
+
+                close_machine_fault_for_work_order(
+                    conn,
+                    work_order_id
+                )
+
+                refresh_machine_operational_state(
+                    conn,
+                    machine_id
+                )
+
+                add_work_order_event(
+                    conn,
+                    work_order_id,
+                    "repair_complete",
+                    "Repair marked complete. Linked fault closed and machine status refreshed.",
+                    session["user_id"]
+                )
+
+        flash("Work order status updated.")
+
+    except Exception as e:
+        conn.rollback()
+        flash(f"Error updating work order status: {e}")
+
+    finally:
+        conn.close()
+
+    return redirect(
+        url_for(
+            "work_order_detail",
+            work_order_id=work_order_id
+        )
     )
 
 

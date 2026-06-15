@@ -837,6 +837,32 @@ def get_all_work_order_parts(conn):
 
     return cur.fetchall()
 
+def update_work_order_status(conn, work_order_id, new_status):
+    allowed_statuses = [
+        "open",
+        "assigned",
+        "in_progress",
+        "waiting_on_parts",
+        "repair_complete",
+        "closed"
+    ]
+
+    if new_status not in allowed_statuses:
+        raise ValueError("Invalid work order status.")
+    
+    cur = conn.cursor()
+
+    cur.execute("""
+        UPDATE WorkOrder
+        SET status = ?
+        WHERE work_order_id = ?
+    """, (
+        new_status,
+        work_order_id
+    ))
+
+    conn.commit()
+
 
 
 #=====================================

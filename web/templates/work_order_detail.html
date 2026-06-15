@@ -31,6 +31,51 @@
         </div>
 
         <div class="card">
+            <h2>Work Order Status</h2>
+
+            <form method="POST"
+                action="{{ url_for('update_work_order_status_route', work_order_id=work_order.work_order_id) }}">
+                <select name="status">
+                    <option value="open"
+                        {% if work_order.status == "open" %}selected{% endif %}>
+                        Open
+                    </option>
+
+                    <option value="assigned"
+                        {% if work_order.status == "assigned" %}selected{% endif %}>
+                        Assigned
+                    </option>
+
+                    <option value="in_progress"
+                        {% if work_order.status == "in_progress" %}selected{% endif %}>
+                        In Progress
+                    </option>
+
+                    <option value="waiting_on_parts"
+                        {% if work_order.status == "waiting_on_parts" %}selected{% endif %}>
+                        Waiting On Parts
+                    </option>
+
+                    <option value="repair_complete"
+                        {% if work_order.status == "repair_complete" %}selected{% endif %}>
+                        Repair Complete
+                    </option>
+
+                    <option value="closed"
+                        {% if work_order.status == "closed" %}selected{% endif %}>
+                        Closed
+                    </option>
+
+                </select>
+
+                <button type="submit">
+                    Update Status
+                </button>
+                
+            </form>
+        </div>
+
+        <div class="card">
             <h2>Machine</h2>
 
             <p>

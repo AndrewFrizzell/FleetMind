@@ -182,7 +182,13 @@ def create_tables(conn):
         assigned_to INTEGER,
         assignment_id INTEGER,
         status TEXT NOT NULL DEFAULT 'open'
-            CHECK (status IN ('open', 'in_progress', 'closed')),
+            CHECK (status IN ('open',
+                'assigned',
+                'in_progress',
+                'waiting_on_parts',
+                'repair_complete',
+                'closed'
+            )),
         priority INTEGER NOT NULL DEFAULT 1
             CHECK (priority IN (1, 2, 3)),
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
