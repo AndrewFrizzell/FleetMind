@@ -775,6 +775,28 @@ def get_work_order_parts(conn, work_order_id):
 
     return cur.fetchall()
 
+def update_work_order_part_status(conn, part_id, status):
+    cur = conn.cursor()
+
+    cur.execute("""
+        UPDATE WorkOrderPart
+        SET status = ?
+        WHERE part_id = ?
+    """, (status, part_id))
+
+    conn.commit()
+
+def get_work_order_part_by_id(conn, part_id):
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT *
+        FROM WorkOrderPart
+        WHERE part_id = ?
+    """, (part_id,))
+
+    return cur.fetchone()
+
 
 
 #=====================================

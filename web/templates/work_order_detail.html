@@ -172,7 +172,22 @@
                             <td>{{ part.part_number }}</td>
                             <td>{{ part.description }}</td>
                             <td>{{ part.quantity }}</td>
-                            <td>{{ part.status }}</td>
+                            <td>
+                                <form method="POST" 
+                                    action="{{ url_for('update_work_order_part_status_route', work_order_id=work_order.work_order_id, part_id=part.part_id) }}">
+
+                                    <select name="status">
+                                        <option value="needed" {{ "selected" if part.status == "needed" else "" }}>Needed</option>
+                                        <option value="ordered" {{ "selected" if part.status == "ordered" else "" }}>Ordered</option>
+                                        <option value="received" {{ "selected" if part.status == "received" else "" }}>Received</option>
+                                        <option value="installed" {{ "selected" if part.status == "installed" else "" }}>Installed</option>
+                                    </select>
+
+                                    <button type="submit">
+                                        update
+                                    </button>
+                                </form>
+                            </td>
                             <td>{{ part.note or "" }}</td>
                             <td>{{ part.created_at }}</td>
                         </tr>

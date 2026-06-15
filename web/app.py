@@ -58,7 +58,9 @@ from logic import (
             add_job_event,
             get_machine_unit_number,
             add_work_order_part,
-            get_work_order_parts
+            get_work_order_parts,
+            update_work_order_part_status,
+            get_work_order_part_by_id
 
 
 )
@@ -937,6 +939,44 @@ def add_work_order_part_route(work_order_id):
             work_order_id=work_order_id
         )
     )
+
+@app.route("/work-orders/<int:work_order_id>/parts/<int:part_id>/status", methods=["POST"])
+@login_required
+def update_work_order_part_status_route(work_order_id, part_id):
+
+    if session.get("role") not in ["mechanic", "equipment_manager"]:
+        return "Forbidden", 403
+    
+    status = request.form.get("status")
+
+    if status not in ["needed", "ordered", "received", "installed"]:
+        flash("Invalid part status.")
+        return redirect(url_for("work_order_detail", work_order_id=work_order_id))
+    
+    conn = get_connection()
+
+    update_work_order_part_status(
+        conn,
+        part_id,
+        status
+    )
+
+    part = get_work_order_part_by_id(conn, part_id)
+
+    part_label = part["part_number"] or part["description"]
+
+    add_work_order_event(
+        conn,
+        work_order_id,
+        "part_status_updated",
+        f"Part {part_label} status updated to {status}.",
+        session["user_id"]
+    )
+
+    conn.close()
+
+    flash("Part status updated.")
+    return redirect(url_for("work_order_detail", work_order_id=work_order_id))
 
 
 
