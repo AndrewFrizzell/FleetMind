@@ -590,7 +590,7 @@ def get_all_work_orders(conn):
         CASE wo.status
             WHEN 'repair_complete' THEN 1
             WHEN 'waiting_on_parts' THEN 2
-            WHEN 'in_progresss' THEN 3
+            WHEN 'in_progress' THEN 3
             WHEN 'assigned' THEN 4
             WHEN 'open' THEN 5
             WHEN 'closed' THEN 6
@@ -664,6 +664,8 @@ def close_machine_fault_for_work_order(conn, work_order_id):
         WHERE work_order_id = ?
             AND status = 'open'
     """, (work_order_id,))
+
+    conn.commit()
 
 def add_work_order_event(conn, work_order_id, event_type, description, user_id=(None)):
     cur = conn.cursor()
@@ -747,7 +749,7 @@ def add_work_order_part(
     work_order_id,
     part_number,
     description,
-    quantitiy,
+    quantity,
     status,
     note
 ):
@@ -767,7 +769,7 @@ def add_work_order_part(
         work_order_id,
         part_number,
         description,
-        quantitiy,
+        quantity,
         status,
         note
     ))
@@ -876,6 +878,67 @@ def update_work_order_status(conn, work_order_id, new_status):
 
     conn.commit()
 
+def get_work_order_status_counts(conn):
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT
+            status,
+            COUNT(*) AS count
+        FROM WorkOrder
+        GROUP BY status
+    """)
+
+    rows = cur.fetchall()
+
+    counts = {
+        "open": 0,
+        "assigned": 0,
+        "in_progress": 0,
+        "waiting_on_parts": 0,
+        "repair_complete": 0,
+        "closed": 0
+    }
+
+    for row in rows:
+        counts[row["status"]] = row["count"]
+
+    return counts
+
+def assign_work_order_mechanic(conn, work_order_id, mechanic_id):
+    cur = conn.cursor()
+
+    cur.execute("""
+        UPDATE WorkOrder
+        SET assigned_to = ?,
+            status = CASE
+                WHEN status = 'open' Then 'assigned'
+                ELSE status
+            END
+        WHERE work_order_id = ?
+    """, (
+        mechanic_id,
+        work_order_id
+    ))
+
+    conn.commit()
+
+def get_user_by_id(conn, user_id):
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT
+            user_id,
+            name,
+            role,
+            email,
+            active
+        FROM User
+        WHERE user_id = ?
+    """, (user_id,))
+
+    return cur.fetchone()
+
 
 
 #=====================================
@@ -933,6 +996,39 @@ def get_assignments_for_mechanics(conn, mechanic_id):
     """, (mechanic_id,))
 
     return cursor.fetchall()
+
+def get_work_orders_for_mechanic(conn, mechanic_id):
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT 
+            wo.work_order_id,
+            wo.machine_id,
+            wo.status,
+            wo.priority,
+            wo.notes,
+            wo.created_at,
+                
+            m.unit_number,
+            m.make,
+            m.model
+        FROM WorkOrder wo
+        JOIN Machine m
+            ON wo.machine_id = m.machine_id
+        WHERE wo.assigned_to = ?
+            AND wo.status != 'closed'
+        ORDER BY 
+            CASE wo.status
+                WHEN 'assigned' THEN 1
+                WHEN 'in_progress' THEN 2
+                WHEN 'waiting_on_parts' THEN 3
+                WHEN 'repair_complete' THEN 4
+                ELSE 5
+            END,
+            wo.created_at DESC
+    """, (mechanic_id,))
+
+    return cur.fetchall()
 
 
 #close assignemnt 
@@ -1028,7 +1124,7 @@ def get_work_order_by_id(conn, work_order_id):
             mechanic.name AS assigned_to_name,
 
             mf.fault_id,
-            mf.item_name AS fault_id_name,
+            mf.item_name AS fault_item_name,
             mf.status AS fault_status,
             mf.first_reported_at,
             mf.last_reported_at,

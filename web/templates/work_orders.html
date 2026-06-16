@@ -19,44 +19,50 @@
         <div class="card">
             <h2>All Work Orders</h2>
 
-            {% if work_orders and work_orders|length > 0 %}
-                <table>
-                    <tr>
-                        <th>WO #</th>
-                        <th>Machine</th>
-                        <th>Status</th>
-                        <th>Priority</th>
-                        <th>Assigned To</th>
-                        <th>Created</th>
-                        <th>Notes</th>
-                    </tr>
+            {% for status in status_order %}
+                <div class="card">
+                    <h2>{{ status_labels[status] }}</h2>
 
-                    {% for wo in work_orders %}
-                        <tr>
-                            <td>
-                                <a href="{{ url_for('work_order_detail', work_order_id=wo.work_order_id) }}">
-                                    #{{ wo.work_order_id }}
-                                </a>
-                            </td>
+                    {% set orders = grouped_work_orders[status] %}
 
-                            <td>
-                                <a href="{{ url_for('machine_profile', machine_id=wo.machine_id) }}">
-                                    {{ wo.unit_number }}-
-                                    {{ wo.make }} {{ wo.model }}
-                                </a>
-                            </td>
+                    {% if orders and orders|length > 0 %}
+                        <table>
+                            <tr>
+                                <th>WO #</th>
+                                <th>Machine</th>
+                                <th>Priority</th>
+                                <th>Assigned</th>
+                                <th>Created</th>
+                                <th>Notes</th>
+                            </tr>
 
-                            <td>{{ wo.status }}</td>
-                            <td>{{ wo.priority }}</td>
-                            <td>{{ wo.mechanic_name or "Unassigned" }}</td>
-                            <td>{{ wo.created_at }}</td>
-                            <td>{{ wo.notes or "" }}</td>
-                        </tr>
-                    {% endfor %}
-                </table>
-            {% else %}
-                <p>No work orders found.</p>
-            {% endif %}
+                            {% for wo in orders %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ url_for('work_order_detail', work_order_id=wo.work_order_id) }}">
+                                            {{ wo.work_order_id }}
+                                        </a>
+                                    </td>
+                                    
+                                    <td>
+                                        <a href="{{ url_for('machine_profile', machine_id=wo.machine_id) }}">
+                                            {{ wo.unit_number }}
+                                        </a>
+                                        -{{ wo.make }} {{ wo.model }}
+                                    </td>
+
+                                    <td>{{ wo.priority }}</td>
+                                    <td>{{ wo.mechanic_name or "Unassigned" }}</td>
+                                    <td>{{ wo.created_at }}</td>
+                                    <td>{{ wo.notes or "" }}</td>
+                                </tr>
+                            {% endfor %}
+                        </table>
+                    {% else %}
+                        <p>No {{ status_labels[status]|lower }} work orders.</p>
+                    {% endif %}
+                </div>
+            {% endfor %}
 
         </div>
     

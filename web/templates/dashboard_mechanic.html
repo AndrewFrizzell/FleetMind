@@ -14,43 +14,44 @@
             </div>
             
             <div class="card">
-                <h2>My Assignments</h2>
+               <h2>My Work Orders</h2>
 
-                {% if assignment_data and assignment_data|length > 0 %}
-                    {% for item in assignment_data %}
-                        <h3>Assignment #{{ item.assignment.assignment_id }}</h3>
-                        <p>Status: {{ item.assignment.status }} | {{ item.assignment.created_at }}</p>
+               {% if work_orders and work_orders|length > 0 %}
+                    <table>
+                        <tr>
+                            <th>WO #</th>
+                            <th>Machinee</th>
+                            <th>Status</th>
+                            <th>Priority</th>
+                            <th>Created</th>
+                            <th>Notes</th>
+                        </tr>
 
-                        {% if item.work_orders and item.work_orders|length > 0 %}
-                            <table border="1" cellpadding="8">
-                                <tr>
-                                    <th>WO #</th>
-                                    <th>Machine</th>
-                                    <th>Notes</th>
-                                    <th>Status</th>
-                                    <th>Priority</th>
-                                </tr>
-                                {% for wo in item.work_orders %}
-                                    <tr>
-                                        <td>
-                                            <a href="{{ url_for('work_order_detail', work_order_id=wo.work_order_id) }}">
-                                                #{{ wo.work_order_id }}
-                                            </a>
-                                        </td>
-                                        <td>{{ wo.serial_number }}</td>
-                                        <td>{{ wo.notes }}</td>
-                                        <td>{{ wo.status }}</td>
-                                        <td>{{ wo.priority }}</td>
-                                    </tr>
-                                {% endfor %}
-                            </table>
-                        {% else %}
-                            <p>No work orders in this assignment.</p>
-                        {% endif %}
-                    {% endfor %}
+                        {% for wo in work_orders %}
+                            <tr>
+                                <td>
+                                    <a href="{{ url_for('work_order_detail', work_order_id=wo.work_order_id) }}">
+                                        #{{ wo.work_order_id }}
+                                    </a>
+                                </td>
+
+                                <td>
+                                    <a href="{{ url_for('machine_profile', machine_id=wo.machine_id) }}">
+                                        {{ wo.unit_number }}
+                                    </a>
+                                    -{{ wo.make }} {{ wo.model }}
+                                </td>
+
+                                <td>{{ wo.status }}</td>
+                                <td>{{ wo.priority }}</td>
+                                <td>{{ wo.created_at }}</td>
+                                <td>{{ wo.notes or "" }}</td>
+                            </tr>
+                        {% endfor %}
+                    </table>
                 {% else %}
-                    <p>You do not have any assignments yet.</p>
-                {% endif %}
+                    <p>No work orders assigned.</p>
+                {% endif %}  
             </div>
         </div>
     </body>

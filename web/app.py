@@ -13,7 +13,6 @@ from logic import (
             create_mechanic_assignment,
             get_assignments_for_mechanics,
             get_work_orders_for_assignment,
-            complete_work_order,
             get_master_checklist_items,
             get_machine_checklist,
             add_item_to_machine_checklist,
@@ -64,7 +63,11 @@ from logic import (
             get_all_work_order_parts,
             update_work_order_status,
             close_machine_fault_for_work_order,
-            refresh_machine_operational_state
+            refresh_machine_operational_state,
+            get_work_order_status_counts,
+            assign_work_order_mechanic,
+            get_user_by_id,
+            get_work_orders_for_mechanic
 
 
 )
@@ -189,9 +192,12 @@ def dashboard():
 
     if role == "equipment_manager":
         conn = get_connection()
+
         open_work_orders = get_open_work_orders(conn)
         mechanics = get_mechanics(conn)
         machines = get_all_machines(conn)
+        work_order_counts = get_work_order_status_counts(conn)
+
         conn.close()
 
         return render_template(
@@ -204,26 +210,22 @@ def dashboard():
             },
             open_work_orders = open_work_orders,
             mechanics=mechanics, 
-            machines=machines
+            machines=machines,
+            work_order_counts=work_order_counts
         )
     if role == "mechanic":
         conn = get_connection()
-        assignments = get_assignments_for_mechanics(conn, session.get("user_id"))
-
-        assignment_data = []
-        for assignment in assignments:
-            work_orders = get_work_orders_for_assignment(conn, assignment["assignment_id"])
-            assignment_data.append({
-                "assignment": assignment,
-                "work_orders": work_orders
-            })
+        work_orders = get_work_orders_for_mechanic(
+            conn,
+            session["user_id"]
+        )
 
         conn.close()
 
         return render_template(
                     "dashboard_mechanic.html", 
                     user=session,
-                    assignment_data=assignment_data
+                    work_orders=work_orders
         )
     
     #fallback
@@ -267,6 +269,7 @@ def work_order_detail(work_order_id):
     work_order = get_work_order_by_id(conn, work_order_id)
     timeline = get_work_order_timeline(conn, work_order_id)
     parts = get_work_order_parts(conn, work_order_id)
+    mechanics = get_mechanics(conn)
 
     conn.close()
 
@@ -278,7 +281,65 @@ def work_order_detail(work_order_id):
         user=session,
         work_order=work_order,
         timeline=timeline,
-        parts=parts
+        parts=parts,
+        mechanics=mechanics
+    )
+
+@app.route("/work-orders/<int:work_order_id>/assign-mechanic", methods=["POST"])
+@login_required
+def assign_work_order_mechanic_route(work_order_id):
+
+
+    if session.get("role") != "equipment_manager":
+        return "Forbidden", 403
+    
+    mechanic_id = request.form.get("mechanic_id")
+
+    if not mechanic_id:
+        flash("Please select a mechanic.")
+        return redirect(
+            url_for("work_order_detail", work_order_id=work_order_id)
+        )
+    
+    conn = get_connection()
+
+    try:
+        assign_work_order_mechanic(
+            conn,
+            work_order_id,
+            int(mechanic_id)
+        )
+
+
+        mechanic = get_user_by_id(
+            conn,
+            int(mechanic_id)
+        )
+        
+
+        add_work_order_event(
+            conn,
+            work_order_id,
+            "mechanic_assigned",
+            f"Assigned to mechanic: {mechanic['name']}",
+            session["user_id"],
+        )
+
+
+        flash("Mechanic assigned.")
+
+    except Exception as e:
+        conn.rollback()
+        flash(f"Error assigning mechanic: {e}")
+
+    finally:
+        conn.close()
+
+    return redirect(
+        url_for(
+            "work_order_detail",
+            work_order_id=work_order_id
+        )
     )
 
 @app.route("/work-orders/<int:work_order_id>/comments/add", methods=["POST"])
@@ -633,7 +694,6 @@ def add_machine():
         
         except Exception as e:
             conn.rollback()
-            print("Add MACHINE ERROR", e)
             flash(f"Error adding machine: {e}")
             return redirect(url_for("add_machine"))
         
@@ -655,9 +715,37 @@ def manager_work_orders():
     try:
         work_orders = get_all_work_orders(conn)
 
+        status_order = [
+            "repair_complete",
+            "waiting_on_parts",
+            "in_progress",
+            "assigned",
+            "open",
+            "closed"
+        ]
+
+        status_labels = {
+            "repair_complete": "Repair Complete",
+            "waiting_on_parts": "Waiting On Parts",
+            "in_progress": "In Progress",
+            "assigned": "Assigned",
+            "open": "Open",
+            "closed": "Closed"
+        }
+
+        grouped_work_orders = {
+            status: [] for status in status_order
+        }
+
+        for wo in work_orders:
+            grouped_work_orders[wo["status"]].append(wo)
+
         return render_template(
             "work_orders.html",
             work_orders=work_orders,
+            grouped_work_orders=grouped_work_orders,
+            status_order=status_order,
+            status_labels=status_labels,
             role=session.get("role")
         )
     
@@ -736,6 +824,7 @@ def assign_machine_to_job_route(job_id):
         return "Forbidden", 403
     
     machine_ids = request.form.getlist("machine_ids")
+    unit_number =  get_machine_unit_number(conn, int(machine_id))
 
     if not machine_ids:
         flash("Select at least one machine.")
@@ -755,7 +844,7 @@ def assign_machine_to_job_route(job_id):
                 conn,
                 job_id,
                 "machine_assigned",
-                f"Machine #{machine_id} was assigned to this job.",
+                f"Machine #{unit_number} was assigned to this job.",
                 session["user_id"]
             )
 
@@ -1007,22 +1096,7 @@ def update_work_order_status_route(work_order_id):
 
             if row:
                 machine_id = row["machine_id"]
-
-                print("REPAIR COMPLETE BLOCK RUNNING")
-                print("WORK ORDER:", work_order_id)
-                print("Machine:", machine_id)
-
                 
-                cur.execute("""
-                    SELECT fault_id, item_name, status, operator_decision, work_order_id
-                    FROM MachineFault
-                    WHERE machine_id = ?
-                """, (machine_id,))
-
-                print("FAULTS AFTER CLOSE:")
-                for fault in cur.fetchall():
-                    print(dict(fault))
-
                 close_machine_fault_for_work_order(
                     conn,
                     work_order_id
@@ -1045,7 +1119,6 @@ def update_work_order_status_route(work_order_id):
 
     except Exception as e:
         conn.rollback()
-        print("ERROR UPDATING WORK ORDER STATUS:", e)
         flash(f"Error updating work order status: {e}")
 
     finally:

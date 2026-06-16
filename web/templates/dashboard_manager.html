@@ -13,53 +13,42 @@
             </div>
            
             <div class="card">
-                <h2>Open Work Orders (Unassigned)</h2>
+                <h2>Work Order Summary</h2>
 
-                <form method="POST" action="/manager/create-assignment">
-                    <label><strong>Assign selected work orders to: </strong></label>
-                    <select name="mechanic_id" required>
-                        <option value="">--- Select mechanic ---</option>
-                        {% for mech in mechanics %}
-                            <option value="{{ mech.user_id }}">{{ mech.name }} (ID {{ mech.user_id }})</option>
-                        {% endfor %}
-                    </select>
-                    <button type="submit">Create Assignment</button>
-                
+                <div class="summary-grid">
+                    <div class="summary-card">
+                        <h3>Open</h3>
+                        <p>{{ work_order_counts.open }}</p>
+                    </div>
 
-                {% if open_work_orders and open_work_orders|length > 0 %}
-                    <table>
-                        <tr>
-                            <th>Select</th>
-                            <th>WO #</th>
-                            <th>Machine</th>
-                            <th>Notes</th>
-                            <th>Priority</th>
-                            <th>Created</th>
-                        </tr>
+                    <div class="summary-card">
+                        <h3>Assigned</h3>
+                        <p>{{ work_order_counts.assigned }}</p>
+                    </div>
 
-                        {% for wo in open_work_orders %}
-                            <tr>
-                                <td>
-                                    <input type="checkbox" name="work_order_ids" value="{{ wo.work_order_id }}">
-                                </td>
-                                <td>
-                                    <a href="{{ url_for('work_order_detail', work_order_id=wo.work_order_id) }}">
-                                        #{{ wo.work_order_id }}
-                                    </a>
-                                </td>
-                                <td>{{ wo.serial_number }}</td>
-                                <td>{{ wo.notes }}</td>
-                                <td>{{ wo.priority }}</td>
-                                <td>{{ wo.created_at }}</td>
-                            </tr>
-                        {% endfor %}
-                    </table>
-                {% else %}
-                    <p>No open work orders!</p>
-                {% endif %}
+                    <div class="summary-card">
+                        <h3>In Progress</h3>
+                        <p>{{ work_order_counts.in_progress }}</p>
+                    </div>
 
-                </form>
+                    <div class="summary-card">
+                        <h3>Waiting On Parts</h3>
+                        <p>{{ work_order_counts.waiting_on_parts }}</p>
+                    </div>
+
+                    <div class="summary-card">
+                        <h3>Repair Complete</h3>
+                        <p>{{ work_order_counts.repair_complete }}</p>
+                    </div>
+
+                    <div class="summary-card">
+                        <h3>closed</h3>
+                        <p>{{ work_order_counts.closed }}</p>
+                    </div>
+
+                </div>
             </div>
+            
             <div class="card">
                 <h2>Mechanics</h2>
 

@@ -110,3 +110,25 @@ button.danger {
 .nav-right form {
     margin: 0;
 }
+
+.summary-grid{
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+}
+
+.summary-card{
+    padding: 16px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: #f8f8f8;
+}
+
+.summary-card h3{
+    margin-top: 0;
+}
+.summary-card p{
+    font-size: 28px;
+    font-weight: bold;
+    margin: 0;
+}

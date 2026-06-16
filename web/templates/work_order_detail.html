@@ -17,7 +17,7 @@
         </div>
 
         <div class="card">
-            <h2>Word Order Info</h2>
+            <h2>Work Order Info</h2>
 
             <p><strong>Status:</strong> {{ work_order.status }}</p>
             <p><strong>Priority:</strong> {{ work_order.priority }}</p>
@@ -30,48 +30,103 @@
             <p>{{ work_order.notes }}</p>
         </div>
 
+        {% if user.role == "equipment_manager" %}
+            <div class="card">
+                <h2>Assign Mechanic</h2>
+
+                <form method="POST"
+                    action="{{ url_for('assign_work_order_mechanic_route', work_order_id=work_order.work_order_id) }}">
+
+                    <select name="mechanic_id">
+                        <option value="">-- Select Mechanic --</option>
+
+                        {% for mechanic in mechanics %}
+                            <option value="{{ mechanic.user_id }}"
+                                {% if work_order.assigned_to == mechanic.user_id %}selected{% endif %}>
+                                {{ mechanic.name}}
+                            </option>
+                        {% endfor %}
+                    </select>
+
+                    <button type="submit">
+                        Assign
+                    </button>
+                </form>
+            </div>
+        {% endif %}
+
         <div class="card">
             <h2>Work Order Status</h2>
 
             <form method="POST"
                 action="{{ url_for('update_work_order_status_route', work_order_id=work_order.work_order_id) }}">
                 <select name="status">
-                    <option value="open"
-                        {% if work_order.status == "open" %}selected{% endif %}>
-                        Open
-                    </option>
 
-                    <option value="assigned"
-                        {% if work_order.status == "assigned" %}selected{% endif %}>
-                        Assigned
-                    </option>
+                    {% if user.role == "equipment_manager" %}
+                        <option value="open"
+                            {% if work_order.status == "open" %}selected{% endif %}>
+                            Open
+                        </option>
 
-                    <option value="in_progress"
-                        {% if work_order.status == "in_progress" %}selected{% endif %}>
-                        In Progress
-                    </option>
+                        <option value="assigned"
+                            {% if work_order.status == "assigned" %}selected{% endif %}>
+                            Assigned
+                        </option>
 
-                    <option value="waiting_on_parts"
-                        {% if work_order.status == "waiting_on_parts" %}selected{% endif %}>
-                        Waiting On Parts
-                    </option>
+                        <option value="in_progress"
+                            {% if work_order.status == "in_progress" %}selected{% endif %}>
+                            In Progress
+                        </option>
 
-                    <option value="repair_complete"
-                        {% if work_order.status == "repair_complete" %}selected{% endif %}>
-                        Repair Complete
-                    </option>
+                        <option value="waiting_on_parts"
+                            {% if work_order.status == "waiting_on_parts" %}selected{% endif %}>
+                            Waiting On Parts
+                        </option>
 
-                    <option value="closed"
-                        {% if work_order.status == "closed" %}selected{% endif %}>
-                        Closed
-                    </option>
+                        <option value="repair_complete"
+                            {% if work_order.status == "repair_complete" %}selected{% endif %}>
+                            Repair Complete
+                        </option>
+
+                        <option value="closed"
+                            {% if work_order.status == "closed" %}selected{% endif %}>
+                            Closed
+                        </option>
+                    {% endif %}
+
+                    {% if user.role == "mechanic" %}
+                        <option value="assigned"
+                            {% if work_order.status == "assigned" %}selected{% endif %}>
+                            Assigned
+                        </option>
+
+                        <option value="in_progress"
+                            {% if work_order.status == "in_progress" %}selected{% endif %}>
+                            In Progress
+                        </option>
+
+                        <option value="waiting_on_parts"
+                            {% if work_order.status == "waiting_on_parts" %}selected{% endif %}>
+                            Waiting On Parts
+                        </option>
+
+                        <option value="repair_complete"
+                            {% if work_order.status == "repair_complete" %}selected{% endif %}>
+                            Repair Complete
+                        </option>
+                        <option value="assigned"
+                            {% if work_order.status == "assigned" %}selected{% endif %}>
+                            Assigned
+                        </option>
+                        
+                    {% endif %}
 
                 </select>
 
                 <button type="submit">
                     Update Status
                 </button>
-                
+
             </form>
         </div>
 
@@ -223,7 +278,7 @@
                 <select name="status" required>
                     <option value="needed">Needed</option>
                     <option value="ordered">Ordered</option>
-                    <option value="recieved">Received</option>
+                    <option value="received">Received</option>
                     <option value="installed">Installed</option>
                 </select>
 
