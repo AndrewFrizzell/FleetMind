@@ -10,9 +10,6 @@ from logic import (
             get_open_work_orders, 
             get_mechanics, 
             get_all_machines, 
-            create_mechanic_assignment,
-            get_assignments_for_mechanics,
-            get_work_orders_for_assignment,
             get_master_checklist_items,
             get_machine_checklist,
             add_item_to_machine_checklist,
@@ -231,35 +228,6 @@ def dashboard():
     #fallback
     return "unknown role", 400
 
-@app.route("/manager/create-assignment", methods=["POST"])
-@login_required
-def manager_create_assignment():
-    if session.get("role") != "equipment_manager":
-        return "Forbidden", 403
-    
-    mechanic_id = request.form.get("mechanic_id")
-    work_order_ids = request.form.getlist("work_order_ids")
-
-    if not mechanic_id or not work_order_ids:
-        flash("Pick a mechanic and at least one work order.")
-        return redirect(url_for("dashboard"))
-    
-    mechanic_id = int(mechanic_id)
-    work_order_ids = [int(x) for x in work_order_ids]
-
-    conn = get_connection()
-    try:
-        assignment_id = create_mechanic_assignment(conn, mechanic_id, work_order_ids)
-        conn.commit()
-    except Exception as e:
-        conn.rollback()
-        flash(f"Error creating assignment: {e}")
-        return redirect(url_for("dashboard"))
-    finally:
-        conn.close()
-
-    flash(f"Created assignment #{assignment_id}.")
-    return redirect(url_for("dashboard"))
 
 @app.route("/work-orders/<int:work_order_id>")
 @login_required
@@ -824,8 +792,7 @@ def assign_machine_to_job_route(job_id):
         return "Forbidden", 403
     
     machine_ids = request.form.getlist("machine_ids")
-    unit_number =  get_machine_unit_number(conn, int(machine_id))
-
+    
     if not machine_ids:
         flash("Select at least one machine.")
         return redirect(url_for("job_detail", job_id=job_id))
@@ -834,6 +801,9 @@ def assign_machine_to_job_route(job_id):
 
     try:
         for machine_id in machine_ids:
+            unit_number =  get_machine_unit_number(conn, int(machine_id))
+
+
             assign_machine_to_job(
                 conn,
                 int(machine_id),

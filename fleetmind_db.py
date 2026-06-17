@@ -141,7 +141,7 @@ def create_tables(conn):
         notes TEXT,
         passed INTEGER NOT NULL DEFAULT 1,
         FOREIGN KEY (machine_id) REFERENCES Machine(machine_id),
-        FOREIGN KEY (operator_id) REFERENCES User(user_id)
+        FOREIGN KEY (operator_id) REFERENCES User(user_id),
         FOREIGN KEY (job_id) REFERENCES Job(job_id)
     );
     """)
@@ -161,17 +161,6 @@ def create_tables(conn):
     );
     """)
 
-    # Mechanic assignments
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS MechanicAssignments (
-        assignment_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        mechanic_id INTEGER NOT NULL,
-        created_at TEXT NOT NULL DEFAULT (datetime('now')),
-        status TEXT NOT NULL DEFAULT 'open'
-            CHECK (status IN ('open', 'in_progress', 'closed')),
-        FOREIGN KEY (mechanic_id) REFERENCES User(user_id)
-    );
-    """)
 
     # Work orders
     cursor.execute("""
@@ -180,7 +169,6 @@ def create_tables(conn):
         machine_id INTEGER NOT NULL,
         created_by INTEGER NOT NULL,
         assigned_to INTEGER,
-        assignment_id INTEGER,
         status TEXT NOT NULL DEFAULT 'open'
             CHECK (status IN ('open',
                 'assigned',
@@ -196,8 +184,7 @@ def create_tables(conn):
         notes TEXT,
         FOREIGN KEY (machine_id) REFERENCES Machine(machine_id),
         FOREIGN KEY (created_by) REFERENCES User(user_id),
-        FOREIGN KEY (assigned_to) REFERENCES User(user_id),
-        FOREIGN KEY (assignment_id) REFERENCES MechanicAssignments(assignment_id)
+        FOREIGN KEY (assigned_to) REFERENCES User(user_id)
     );
     """)
 
@@ -257,7 +244,7 @@ def create_tables(conn):
         closed_at TEXT,
                    
         FOREIGN KEY (machine_id) REFERENCES Machine(machine_id),
-        FOREIGN KEY (work_order_id) REFERENCES WorkOrder(work_order_id)
+        FOREIGN KEY (work_order_id) REFERENCES WorkOrder(work_order_id),
                    
         UNIQUE(machine_id, item_name, status)
         

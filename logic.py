@@ -476,24 +476,8 @@ def get_open_work_orders(conn):
 
     return cur.fetchall()
 
-#work orders for assignment 
-def get_work_orders_for_assignment(conn, assignment_id):
-    cursor = conn.cursor()
 
-    cursor.execute("""
-        SELECT 
-            wo.work_order_id,
-            m.serial_number,
-            wo.notes,
-            wo.status,
-            wo.priority
-        FROM WorkOrder wo
-        JOIN Machine m ON wo.machine_id = m.machine_id
-        WHERE wo.assignment_id = ?
-        ORDER BY wo.priority DESC
-    """, (assignment_id,))
 
-    return cursor.fetchall()
 
 #foreman creates work orders
 def create_manual_work_order(conn, machine_id, foreman_id, notes, priority=1):
@@ -541,7 +525,6 @@ def get_work_orders_for_jobs(conn, job_id, include_completed=False):
             wo.priority,
             wo.created_at,
             wo.assigned_to,
-            wo.assignment_id,
             wo.notes
         FROM WorkOrder wo
         JOIN Machine m on wo.machine_id = m.machine_id
@@ -946,56 +929,7 @@ def get_user_by_id(conn, user_id):
 #=====================================
 
 
-# mechanic assignments compiler
-def create_mechanic_assignment(conn, mechanic_id, work_order_ids):
-    cursor = conn.cursor()
-    
-    cursor.execute("""
-        SELECT role FROM User WHERE user_id = ?
-    """, (mechanic_id,))
-    row = cursor.fetchone()
 
-    if row is None:
-        raise ValueError("User does not exist.")
-    
-    if row[0] != "mechanic":
-        raise ValueError("User is not a mechanic.")
-    
-    cursor.execute("""
-        INSERT INTO MechanicAssignments (mechanic_id)
-        VALUES (?)
-    """, (mechanic_id,))
-
-    assignment_id = cursor.lastrowid
-
-    for work_order_id in work_order_ids:
-        cursor.execute("""
-            UPDATE WorkOrder
-            SET assigned_to = ?,
-                assignment_id = ?,
-                status = 'assigned'
-            WHERE work_order_id = ? 
-        """, (mechanic_id, assignment_id, work_order_id))
-
-    conn.commit()
-    return assignment_id
-
-
-#assignments for mechanics 
-def get_assignments_for_mechanics(conn, mechanic_id):
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        SELECT 
-            ma.assignment_id,
-            ma.created_at,
-            ma.status
-        FROM MechanicAssignments ma
-        WHERE ma.mechanic_id = ?
-        ORDER BY ma.created_at DESC
-    """, (mechanic_id,))
-
-    return cursor.fetchall()
 
 def get_work_orders_for_mechanic(conn, mechanic_id):
     cur = conn.cursor()
@@ -1030,74 +964,6 @@ def get_work_orders_for_mechanic(conn, mechanic_id):
 
     return cur.fetchall()
 
-
-#close assignemnt 
-def close_assignment_if_finished(conn, assignment_id):
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        SELECT COUNT(*)
-        FROM WorkOrder
-        WHERE assignment_id = ?
-            AND status != 'closed'
-    """, (assignment_id,))
-
-    remaining = cursor.fetchone()[0]
-
-    if remaining == 0:
-        cursor.execute("""
-            UPDATE MechanicAssignments
-            SET status = 'closed'
-            WHERE assignment_id = ?
-        """, (assignment_id,))
-
-        conn.commit()
-
-        return True # assignmeent closed
-    
-    return False #assignment still open
-
-#complete work orders and close assignments 
-def complete_work_order(conn, work_order_id):
-    cur = conn.cursor()
-
-    cur.execute("""
-        SELECT assignment_id, machine_id
-        FROM WorkOrder
-        WHERE work_order_id = ?
-    """, (work_order_id,))
-
-    row = cur.fetchone()
-
-    if row is None:
-        raise ValueError("Work order does not exist.")
-    
-    assignment_id = row["assignment_id"]
-    machine_id = row["machine_id"]
-
-    cur.execute("""
-        UPDATE WorkOrder
-        SET status = 'closed',
-            completed_at = datetime('now')
-        WHERE work_order_id = ?
-    """, (work_order_id,))
-
-    add_work_order_event(
-        conn,
-        work_order_id,
-        "work_order_completed",
-        f"Work order #{work_order_id} was completed."
-    )
-    
-    close_machine_fault_for_work_order(conn, work_order_id)
-
-    refresh_machine_operational_state(conn, machine_id)
-
-    if assignment_id is not None:
-        close_assignment_if_finished(conn, assignment_id)
-
-    conn.commit()
-
 def get_work_order_by_id(conn, work_order_id):
     cur = conn.cursor()
 
@@ -1107,7 +973,6 @@ def get_work_order_by_id(conn, work_order_id):
             wo.machine_id,
             wo.created_by,
             wo.assigned_to,
-            wo.assignment_id,
             wo.status,
             wo.priority,
             wo.created_at,

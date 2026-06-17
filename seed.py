@@ -8,7 +8,6 @@ def clear_tables(conn):
         "InspectionItems",
         "Inspections",
         "WorkOrder",
-        "MechanicAssignments",
         "MachineChecklistItem",
         #"TemplateItems",
         #"ChecklistTemplate",
