@@ -20,6 +20,22 @@ from logic_mods.parts import (
     get_work_order_parts
 )
 
+from logic_mods.jobs import (
+    get_jobs_for_foreman,
+    get_job_by_id,
+    get_machines_for_job,
+    get_active_jobs,
+    create_job,
+    get_machines_available_for_job,
+    assign_machine_to_job,
+    get_open_work_orders_for_job,
+    get_recent_inspections_for_job,
+    add_job_event,
+    get_job_events
+)
+
+
+
 
 from logic import (
             get_open_work_orders, 
@@ -51,21 +67,10 @@ from logic import (
             get_work_order_timeline,
             get_inspections_for_operator,
             get_operator_machine_list,
-            get_jobs_for_foreman,
-            get_machines_for_job,
-            get_job_by_id,
-            get_active_jobs,
-            create_job,
-            get_machines_available_for_job,
-            assign_machine_to_job,
-            get_open_work_orders_for_job,
-            get_recent_inspections_for_job,
             get_inspection_by_id,
             get_inspection_items,
             update_machine_operational_state,
             remove_machine_from_job,
-            get_job_events,
-            add_job_event,
             get_machine_unit_number,
             update_work_order_status,
             close_machine_fault_for_work_order,
