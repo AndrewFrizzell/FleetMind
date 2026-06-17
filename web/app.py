@@ -6,9 +6,23 @@ sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 
 from fleetmind_db import get_connection
+
+from logic_mods.users import (
+    get_mechanics,
+    get_user_by_id
+)
+
+from logic_mods.parts import (
+    add_work_order_part,
+    get_all_work_order_parts,
+    update_work_order_part_status,
+    get_work_order_part_by_id,
+    get_work_order_parts
+)
+
+
 from logic import (
             get_open_work_orders, 
-            get_mechanics, 
             get_all_machines, 
             get_master_checklist_items,
             get_machine_checklist,
@@ -53,17 +67,11 @@ from logic import (
             get_job_events,
             add_job_event,
             get_machine_unit_number,
-            add_work_order_part,
-            get_work_order_parts,
-            update_work_order_part_status,
-            get_work_order_part_by_id,
-            get_all_work_order_parts,
             update_work_order_status,
             close_machine_fault_for_work_order,
             refresh_machine_operational_state,
             get_work_order_status_counts,
             assign_work_order_mechanic,
-            get_user_by_id,
             get_work_orders_for_mechanic
 
 

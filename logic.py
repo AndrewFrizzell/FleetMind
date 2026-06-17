@@ -727,113 +727,15 @@ def get_work_order_timeline(conn, work_order_id):
 
     return cur.fetchall()
 
-def add_work_order_part(
-    conn,
-    work_order_id,
-    part_number,
-    description,
-    quantity,
-    status,
-    note
-):
-    cur = conn.cursor()
 
-    cur.execute("""
-        INSERT INTO WorkOrderPart (
-            work_order_id,
-            part_number,
-            description,
-            quantity,
-            status,
-            note
-        )
-        VALUES (?, ?, ?, ?, ?, ?)
-    """, (
-        work_order_id,
-        part_number,
-        description,
-        quantity,
-        status,
-        note
-    ))
 
-    conn.commit()
 
-    return cur.lastrowid
 
-def get_work_order_parts(conn, work_order_id):
-    cur = conn.cursor()
 
-    cur.execute("""
-        SELECT *
-        FROM WorkOrderPart
-        WHERE work_order_id = ?
-        ORDER BY created_at DESC
-    """, (work_order_id,))
 
-    return cur.fetchall()
 
-def update_work_order_part_status(conn, part_id, status):
-    cur = conn.cursor()
 
-    cur.execute("""
-        UPDATE WorkOrderPart
-        SET status = ?
-        WHERE part_id = ?
-    """, (status, part_id))
 
-    conn.commit()
-
-def get_work_order_part_by_id(conn, part_id):
-    cur = conn.cursor()
-
-    cur.execute("""
-        SELECT *
-        FROM WorkOrderPart
-        WHERE part_id = ?
-    """, (part_id,))
-
-    return cur.fetchone()
-
-def get_all_work_order_parts(conn):
-    cur = conn.cursor()
-
-    cur.execute("""
-        SELECT 
-            p.part_id,
-            p.work_order_id,
-            p.part_number,
-            p.description,
-            p.quantity,
-            p.status,
-            p.note,
-            p.created_at,
-                
-            wo.status AS work_order_status,
-                
-            m.machine_id,
-            m.unit_number,
-            m.make,
-            m.model
-                
-        FROM WorkOrderPart p 
-        JOIN WorkOrder wo
-            ON p.work_order_id = wo.work_order_id
-        JOIN Machine m
-            ON wo.machine_id = m.machine_id
-        ORDER BY 
-            wo.created_at DESC,
-            CASE p.status
-                WHEN 'needed' THEN 1
-                WHEN 'ordered' THEN 2
-                WHEN 'received' THEN 3
-                WHEN 'installed' then 4
-                ELSE 5
-            END,
-            p.created_at DESC
-    """)
-
-    return cur.fetchall()
 
 def update_work_order_status(conn, work_order_id, new_status):
     allowed_statuses = [
@@ -906,21 +808,7 @@ def assign_work_order_mechanic(conn, work_order_id, mechanic_id):
 
     conn.commit()
 
-def get_user_by_id(conn, user_id):
-    cur = conn.cursor()
 
-    cur.execute("""
-        SELECT
-            user_id,
-            name,
-            role,
-            email,
-            active
-        FROM User
-        WHERE user_id = ?
-    """, (user_id,))
-
-    return cur.fetchone()
 
 
 
@@ -1338,81 +1226,12 @@ def get_machine_unit_number(conn, machine_id):
 # Users
 #==============================================
 
-#user checks in
-def check_in(conn, user_id, note=""):
-    cur = conn.cursor()
 
-    # Prevent double check-in (already checked in with no checkout)
-    cur.execute("""
-        SELECT shift_id FROM UserShift
-        WHERE user_id = ? AND check_out_at IS NULL
-        LIMIT 1
-    """, (user_id,))
-    if cur.fetchone():
-        return False  # already checked in
 
-    cur.execute("""
-        INSERT INTO UserShift (user_id, note)
-        VALUES (?, ?)
-    """, (user_id, note))
 
-    conn.commit()
-    return True
 
-#user checks out
-def check_out(conn, user_id, note=""):
-    cur = conn.cursor()
 
-    # Find the open shift
-    cur.execute("""
-        SELECT shift_id FROM UserShift
-        WHERE user_id = ? AND check_out_at IS NULL
-        ORDER BY check_in_at DESC
-        LIMIT 1
-    """, (user_id,))
-    row = cur.fetchone()
-    if not row:
-        return False  # not checked in
 
-    shift_id = row[0]
-
-    cur.execute("""
-        UPDATE UserShift
-        SET check_out_at = datetime('now'),
-            note = CASE
-                WHEN ? != '' THEN COALESCE(note || ' | ', '') || ?
-                ELSE note
-            END
-        WHERE shift_id = ?
-    """, (note, note, shift_id))
-
-    conn.commit()
-    return True
-
-#is user available 
-def get_checked_in_users(conn):
-    cur = conn.cursor()
-    cur.execute("""
-        SELECT u.user_id, u.name, u.role, s.check_in_at
-        FROM UserShift s
-        JOIN User u ON u.user_id = s.user_id
-        WHERE s.check_out_at IS NULL
-          AND u.active = 1
-        ORDER BY u.role, u.name
-    """)
-    return cur.fetchall()
-
-#get mechanics list 
-def get_mechanics(conn):
-    cur = conn.cursor()
-    cur.execute("""
-        SELECT user_id, name, email, active
-        FROM User 
-        WHERE role = 'mechanic'
-            AND active = 1
-        ORDER BY name ASC
-    """)
-    return cur.fetchall()
 
 #================================
 #foreman
