@@ -34,31 +34,38 @@ from logic_mods.jobs import (
     get_job_events
 )
 
+from logic_mods.machines import(
+    create_machine,
+    update_machine_meter,
+    get_machine_current_meter,
+    get_all_machines,
+    get_machine_by_id,
+    get_open_work_orders_for_machine,
+    get_recent_inspections_for_machine,
+    get_open_faults_for_machine,
+    remove_machine_from_job,
+    get_machine_unit_number,
+    update_machine_operational_state,
+    refresh_machine_operational_state,
+    get_master_checklist_items,
+    create_master_checklist_item,
+    get_machine_checklist,
+    add_item_to_machine_checklist,
+    remove_item_from_machine_checklist
+)
+
 
 
 
 from logic import (
             get_open_work_orders, 
-            get_all_machines, 
-            get_master_checklist_items,
-            get_machine_checklist,
-            add_item_to_machine_checklist,
-            remove_item_from_machine_checklist,
-            get_machine_by_id,
-            get_open_work_orders_for_machine,
-            get_recent_inspections_for_machine,
             get_inspections_by_user,
             get_all_inspections,
-            create_machine,
             get_all_work_orders,
-            create_master_checklist_item,
             get_open_inspection_for_machine,
             create_open_inspection,
             save_inspection_items,
             close_inspection,
-            update_machine_meter,
-            get_machine_current_meter,
-            get_open_faults_for_machine,
             get_work_order_by_id,
             add_work_order_comment,
             get_work_order_comments,
@@ -69,12 +76,8 @@ from logic import (
             get_operator_machine_list,
             get_inspection_by_id,
             get_inspection_items,
-            update_machine_operational_state,
-            remove_machine_from_job,
-            get_machine_unit_number,
             update_work_order_status,
             close_machine_fault_for_work_order,
-            refresh_machine_operational_state,
             get_work_order_status_counts,
             assign_work_order_mechanic,
             get_work_orders_for_mechanic
