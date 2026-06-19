@@ -51,39 +51,38 @@ from logic_mods.machines import(
     create_master_checklist_item,
     get_machine_checklist,
     add_item_to_machine_checklist,
-    remove_item_from_machine_checklist
+    remove_item_from_machine_checklist,
+    get_active_checklist_items
+)
+
+from logic_mods.inspections import(
+    get_all_inspections,
+    get_inspections_by_user,
+    get_open_inspection_for_machine,
+    create_open_inspection,
+    save_inspection_items,
+    close_inspection,
+    get_inspections_for_operator,
+    get_operator_machine_list,
+    get_inspection_by_id,
+    get_inspection_items
+)
+
+from logic_mods.work_orders import (
+    get_open_work_orders,
+    get_all_work_orders,
+    get_work_order_by_id,
+    add_work_order_comment,
+    add_work_order_event,
+    get_work_order_timeline,
+    update_work_order_status,
+    close_machine_fault_for_work_order,
+    get_work_order_status_counts,
+    assign_work_order_mechanic,
+    get_work_orders_for_mechanic,
 )
 
 
-
-
-from logic import (
-            get_open_work_orders, 
-            get_inspections_by_user,
-            get_all_inspections,
-            get_all_work_orders,
-            get_open_inspection_for_machine,
-            create_open_inspection,
-            save_inspection_items,
-            close_inspection,
-            get_work_order_by_id,
-            add_work_order_comment,
-            get_work_order_comments,
-            get_work_order_events,
-            add_work_order_event,
-            get_work_order_timeline,
-            get_inspections_for_operator,
-            get_operator_machine_list,
-            get_inspection_by_id,
-            get_inspection_items,
-            update_work_order_status,
-            close_machine_fault_for_work_order,
-            get_work_order_status_counts,
-            assign_work_order_mechanic,
-            get_work_orders_for_mechanic
-
-
-)
 
 app = Flask(__name__)
 app.secret_key = "dev-secret-change-me" #change this later

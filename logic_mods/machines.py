@@ -360,3 +360,12 @@ def remove_item_from_machine_checklist(conn, machine_checklist_item_id):
     """, (machine_checklist_item_id,))
     conn.commit()
 
+def get_active_checklist_items(conn):
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT item_id, name, description
+        FROM MasterChecklistItem
+        WHERE active = 1
+        ORDER BY item_id ASC
+    """)
+    return cur.fetchall()
