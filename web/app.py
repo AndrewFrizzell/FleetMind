@@ -7,6 +7,10 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 
 from fleetmind_db import get_connection
 
+from routes.auth_helpers import (
+    login_required
+)
+
 from logic_mods.users import (
     get_mechanics,
     get_user_by_id
@@ -97,15 +101,6 @@ def get_user_by_email(conn, email: str):
     """, (email,))
     return cursor.fetchone()
 
-def login_required(view_func):
-    from functools import wraps
-
-    @wraps(view_func)
-    def wrapper(*args, **kwargs):
-        if "user_id" not in session:
-            return redirect(url_for("login"))
-        return view_func(*args, **kwargs)
-    return wrapper
 
 @app.route("/", methods=["GET"])
 def home():
