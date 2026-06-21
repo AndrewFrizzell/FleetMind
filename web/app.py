@@ -11,6 +11,10 @@ from routes.auth_helpers import (
     login_required
 )
 
+from routes.auth_routes import (
+    auth_bp
+)
+
 from logic_mods.users import (
     get_mechanics,
     get_user_by_id
@@ -91,63 +95,13 @@ from logic_mods.work_orders import (
 app = Flask(__name__)
 app.secret_key = "dev-secret-change-me" #change this later
 
-def get_user_by_email(conn, email: str):
-    cursor = conn.cursor()
-    cursor.execute("""
-        SELECT user_id, name, role, email, password_hash, active
-        FROM User
-        WHERE email = ?
-        LIMIT 1
-    """, (email,))
-    return cursor.fetchone()
+app.register_blueprint(auth_bp)
 
 
-@app.route("/", methods=["GET"])
-def home():
-    if "user_id" in session:
-        return redirect(url_for("dashboard"))
-    return redirect(url_for("login"))
 
-@app.route("/login", methods=["GET", "POST"])
-def login():
-    if request.method == "POST":
-        email = (request.form.get("email") or "").strip().lower()
-        password = request.form.get("password") or ""
 
-        conn = get_connection()
-        user = get_user_by_email(conn, email)
-        conn.close()
 
-        if not user:
-            flash("Invalid email or password.")
-            return render_template("login.html")
-        
-        user_id, name, role, email_db, password_hash, active = user
 
-        if int(active) != 1:
-            flash("Account is inactive.")
-            return render_template("login.html")
-        
-        #mvp compare to password_hash column exactly 
-        #later store real hashes and verify properly 
-
-        if password != password_hash:
-            flash("Invalid email or password.")
-            return render_template("login.html")
-        
-        session["user_id"] = user_id
-        session["name"] = name
-        session["role"] = role
-        session["email"] = email_db
-
-        return redirect(url_for("dashboard"))
-    
-    return render_template("login.html")
-
-@app.route("/logout", methods=["POST"])
-def logout():
-    session.clear()
-    return redirect(url_for("login"))
 
 @app.route("/dashboard", methods=["GET"])
 @login_required
