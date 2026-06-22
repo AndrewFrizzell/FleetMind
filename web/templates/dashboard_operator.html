@@ -98,7 +98,7 @@
                             <td>
                                 {% if machine.open_inspection_id %}
                                     {% if machine.open_operator_id == user.user_id %}
-                                        <a href="{{ url_for('new_inspection', machine_id=machine.machine_id) }}">
+                                        <a href="{{ url_for('inspection.new_inspection', machine_id=machine.machine_id) }}">
                                             Update / Close
                                         </a>
                                     {% else %}
@@ -107,7 +107,7 @@
                                         </a>
                                     {% endif %}
                                 {% else %}
-                                    <a href="{{ url_for('new_inspection', machine_id=machine.machine_id) }}">
+                                    <a href="{{ url_for('inpsection.new_inspection', machine_id=machine.machine_id) }}">
                                         Inspect
                                     </a>
                                 {% endif %}

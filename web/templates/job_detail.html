@@ -27,7 +27,7 @@
             <h2>Assign Machine</h2>
 
             <form method="POST"
-                action="{{ url_for('assign_machine_to_job_route', job_id=job.job_id) }}">
+                action="{{ url_for('job.assign_machine_to_job_route', job_id=job.job_id) }}">
 
                     <table>
                         <tr>
@@ -100,7 +100,7 @@
                             </td>
                             <td>
                                 <form method="POST"
-                                    action="{{ url_for('remove_machine_from_job_route', job_id=job.job_id) }}">
+                                    action="{{ url_for('job.remove_machine_from_job_route', job_id=job.job_id) }}">
                                     <input type="hidden" name="machine_id" value="{{ machine.machine_id }}">
                                     <button type="submit">
                                         Remove
@@ -203,7 +203,7 @@
         <div class="card">
             <h2>Add Job Comment</h2>
 
-            <form method="POST" action="{{ url_for('add_job_comment_route', job_id=job.job_id)}}">
+            <form method="POST" action="{{ url_for('job.add_job_comment_route', job_id=job.job_id)}}">
                 <textarea 
                     name="comment"
                     rows="4"
