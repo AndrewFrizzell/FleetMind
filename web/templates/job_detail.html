@@ -94,7 +94,7 @@
                             <td>{{ machine.operational_state }}</td>
                             <td>{{ machine.current_meter_reading }}</td>
                             <td>
-                                <a href="{{ url_for('new_inspection', machine_id=machine.machine_id) }}">
+                                <a href="{{ url_for('inspection.new_inspection', machine_id=machine.machine_id) }}">
                                     Inspect
                                 </a>
                             </td>
@@ -169,7 +169,7 @@
                     {% for inspection in recent_inspections %}
                         <tr>
                             <td>
-                                <a href="{{ url_for('inspection_detail', inspection_id=inspection.inspection_id) }}">
+                                <a href="{{ url_for('inspection.inspection_detail', inspection_id=inspection.inspection_id) }}">
                                     #{{ inspection.inspection_id }}
                                 </a>
                             </td>

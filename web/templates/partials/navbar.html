@@ -2,7 +2,7 @@
     <div class="nav-left">
         <a href="{{ url_for('dashboard.dashboard') }}">Dashboard</a>
         <a href="{{ url_for('machine.machines') }}">Machines</a>
-        <a href="{{ url_for('inspections') }}">Inspections</a>
+        <a href="{{ url_for('inspection.inspections') }}">Inspections</a>
         {% if session["role"] == "equipment_manager" %}
             <a href="{{ url_for('manager_work_orders') }}">Work Orders</a>
             <a href="{{ url_for('manager_parts') }}">Parts</a>

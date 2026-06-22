@@ -31,7 +31,7 @@
                     {% for inspection in open_inspections %}
                         <tr>
                             <td>
-                                <a href="{{ url_for('inspection_detail', inspection_id=inspection.inspection_id )}}">
+                                <a href="{{ url_for('inspection.inspection_detail', inspection_id=inspection.inspection_id )}}">
                                     {{ inspection.inspection_id}}
                                 </a>
                             </td>
@@ -42,7 +42,7 @@
                             <td>{{ inspection.inspection_date }}</td>
                             <td>{{ inspection.opening_meter }}</td>
                             <td>
-                                <a href="{{ url_for('new_inspection', machine_id=inspection.machine_id) }}">
+                                <a href="{{ url_for('inspection.new_inspection', machine_id=inspection.machine_id) }}">
                                     update / close
                                 </a>
                             </td>
