@@ -17,7 +17,7 @@ def get_user_by_email(conn, email: str):
 @auth_bp.route("/", methods=["GET"])
 def home():
     if "user_id" in session:
-        return redirect(url_for("dashboard"))
+        return redirect(url_for("dashboard.dashboard"))
     return redirect(url_for("auth.login"))
 
 @auth_bp.route("/login", methods=["GET", "POST"])
@@ -52,7 +52,7 @@ def login():
         session["role"] = role
         session["email"] = email_db
 
-        return redirect(url_for("dashboard"))
+        return redirect(url_for("dashboard.dashboard"))
     
     return render_template("login.html")
 

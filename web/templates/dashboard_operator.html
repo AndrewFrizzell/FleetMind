@@ -71,7 +71,7 @@
                     {% for machine in machines %}
                         <tr>
                             <td>
-                                <a href="{{ url_for('machine_profile', machine_id=machine.machine_id )}}">
+                                <a href="{{ url_for('machine.machine_profile', machine_id=machine.machine_id )}}">
                                     {{ machine.unit_number }}
                                 </a>
                             </td>
@@ -102,7 +102,7 @@
                                             Update / Close
                                         </a>
                                     {% else %}
-                                        <a href="{{ url_for('machine_profile', machine_id=machine.machine_id) }}">
+                                        <a href="{{ url_for('machine.machine_profile', machine_id=machine.machine_id) }}">
                                             View
                                         </a>
                                     {% endif %}

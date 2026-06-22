@@ -46,7 +46,7 @@
                             <td>{{ "Yes" if inspection.passed == 1 else "No"}}</td>
                             <td>{{ inspection.notes }}</td>
                             <td>
-                                <a href="{{ url_for('machine_profile', machine_id=inspection.machine_id) }}">
+                                <a href="{{ url_for('machine.machine_profile', machine_id=inspection.machine_id) }}">
                                     Machine
                                 </a>
                             </td>

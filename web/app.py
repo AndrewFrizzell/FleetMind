@@ -15,6 +15,14 @@ from routes.auth_routes import (
     auth_bp
 )
 
+from routes.dashboard_routes import (
+    dashboard_bp
+)
+
+from routes.machine_routes import (
+    machine_bp
+)
+
 from logic_mods.users import (
     get_mechanics,
     get_user_by_id
@@ -96,6 +104,8 @@ app = Flask(__name__)
 app.secret_key = "dev-secret-change-me" #change this later
 
 app.register_blueprint(auth_bp)
+app.register_blueprint(dashboard_bp)
+app.register_blueprint(machine_bp)
 
 
 
@@ -103,94 +113,7 @@ app.register_blueprint(auth_bp)
 
 
 
-@app.route("/dashboard", methods=["GET"])
-@login_required
-def dashboard():
-    role = session.get("role")
 
-    if role == "operator":
-        conn = get_connection()
-
-        operator_inspections = get_inspections_for_operator(
-            conn,
-            session["user_id"]
-        )
-
-        open_inspections = [
-            inspection for inspection in operator_inspections
-            if inspection["status"] == "open"
-        ]
-
-        recent_inspections = operator_inspections[:10]
-
-        machines = get_operator_machine_list(conn)
-
-        conn.close()
-
-        return render_template(
-            "dashboard_operator.html",
-            user=session,
-            open_inspections=open_inspections,
-            recent_inspections=recent_inspections,
-            machines=machines
-        )
-
-    if role == "foreman":
-        conn = get_connection()
-
-        jobs = get_jobs_for_foreman(
-            conn,
-            session["user_id"]
-        )
-
-        conn.close()
-
-        return render_template(
-            "dashboard_foreman.html",
-            user=session,
-            jobs=jobs
-        )
-
-    if role == "equipment_manager":
-        conn = get_connection()
-
-        open_work_orders = get_open_work_orders(conn)
-        mechanics = get_mechanics(conn)
-        machines = get_all_machines(conn)
-        work_order_counts = get_work_order_status_counts(conn)
-
-        conn.close()
-
-        return render_template(
-            "dashboard_manager.html",
-            user={
-                "name": session.get("name"),
-                "role": session.get("role"),
-                "email": session.get("email"),
-                "user_id": session.get("user_id")
-            },
-            open_work_orders = open_work_orders,
-            mechanics=mechanics, 
-            machines=machines,
-            work_order_counts=work_order_counts
-        )
-    if role == "mechanic":
-        conn = get_connection()
-        work_orders = get_work_orders_for_mechanic(
-            conn,
-            session["user_id"]
-        )
-
-        conn.close()
-
-        return render_template(
-                    "dashboard_mechanic.html", 
-                    user=session,
-                    work_orders=work_orders
-        )
-    
-    #fallback
-    return "unknown role", 400
 
 
 @app.route("/work-orders/<int:work_order_id>")
@@ -451,115 +374,14 @@ def new_inspection(machine_id):
         jobs=jobs
     )
 
-@app.route("/manager/machines/<int:machine_id>/checklist", methods=["GET"])
-@login_required
-def manage_machine_checklist(machine_id):
-    if session.get("role") != "equipment_manager":
-        return "Forbidden", 403
-    
-    conn = get_connection()
-
-    master_items = get_master_checklist_items(conn)
-    machine_items = get_machine_checklist(conn, machine_id)
-
-    conn.close()
-
-    return render_template(
-        "machine_checklist.html",
-        user=session,
-        machine_id=machine_id,
-        master_items=master_items,
-        machine_items=machine_items
-    )
-
-@app.route("/manager/machines/<int:machine_id>/checklist/add", methods=["POST"])
-@login_required
-def add_machine_checklist_item(machine_id):
-    if session.get("role") != "equipment_manager":
-        return "Forbidden", 403
-
-    selected_item_ids = request.form.getlist("master_item_ids")
-    new_item_name = request.form.get("new_item_name", "").strip()
-    new_item_description = request.form.get("new_item_description", "").strip()
-
-    conn = get_connection()
-
-    for item_id in selected_item_ids:
-        add_item_to_machine_checklist(conn, machine_id, int(item_id))
-    
-    if new_item_name:
-        new_master_item= create_master_checklist_item(
-            conn,
-            new_item_name,
-            new_item_description
-        )
-        add_item_to_machine_checklist(
-            conn,
-            machine_id,
-            new_master_item["item_id"]
-        )
-    
-    conn.close()
 
 
-    return redirect(url_for("manage_machine_checklist", machine_id=machine_id))
 
-@app.route("/manager/machine-checklist/remove", methods=["POST"])
-@login_required
-def remove_machine_checklist_item():
-    if session.get("role") != "equipment_manager":
-        return "Forbidden", 403
-    
-    machine_checklist_item_id = request.form.get("machine_checklist_item_id")
-    machine_id = request.form.get("machine_id")
 
-    conn = get_connection()
-    remove_item_from_machine_checklist(conn, int(machine_checklist_item_id))
-    conn.close()
 
-    return redirect(url_for("manage_machine_checklist", machine_id=int(machine_id)))
 
-@app.route("/machines/<int:machine_id>")
-@login_required
-def machine_profile(machine_id):
 
-    conn = get_connection()
 
-    machine = get_machine_by_id(conn, machine_id)
-
-    open_faults = get_open_faults_for_machine(conn, machine_id)
-
-    if machine is None:
-        conn.close()
-        return "Machine not found", 404
-    
-    open_work_orders = get_open_work_orders_for_machine(conn, machine_id)
-    recent_inspections = get_recent_inspections_for_machine(conn, machine_id)
-    machine_checklist = get_machine_checklist(conn, machine_id)
-    conn.close()
-
-    return render_template(
-        "machine_profile.html",
-        user=session,
-        machine=machine,
-        open_work_orders=open_work_orders,
-        recent_inspections=recent_inspections,
-        machine_checklist=machine_checklist,
-        open_faults=open_faults
-    )
-
-@app.route("/machines")
-@login_required
-def machines():
-    conn = get_connection()
-    machines = get_all_machines(conn)
-    conn.close()
-
-    return render_template(
-        "machines.html",
-        user=session,
-        machines=machines
-    )
 
 @app.route("/inspections")
 @login_required
@@ -579,60 +401,7 @@ def inspections():
         inspections=inspections
     )
 
-@app.route("/manager/machines/add", methods=["GET", "POST"])
-@login_required
-def add_machine():
-    if session.get("role") != "equipment_manager":
-        return "Forbidden", 403
-    
-    if request.method == "POST":
-        unit_number = request.form.get("unit_number") or ""
-        department = request.form.get("department") or ""
-        serial_number = request.form.get("serial_number") or ""
-        vin_number = request.form.get("vin_number") or ""
-        machine_type = request.form.get("type") or ""
-        make = request.form.get("make") or ""
-        model = request.form.get("model") or ""
-        year = request.form.get("year") or None
-        meter_type = request.form.get("meter_type") or "hours"
-        current_meter_reading = request.form.get("current_meter_reading") or 0
-        status = request.form.get("status") or "active"
 
-        if year:
-            year = int(year)
-        
-        current_meter_reading = float(current_meter_reading)
-        
-        conn = get_connection()
-
-        try:
-            machine_id = create_machine(
-                    conn,
-                    unit_number=unit_number,
-                    department=department,
-                    serial_number=serial_number,
-                    vin_number=vin_number,
-                    machine_type=machine_type,
-                    make=make,
-                    model=model,
-                    year=year,
-                    meter_type=meter_type,
-                    current_meter_reading=current_meter_reading,
-                    status=status
-                )
-            
-            flash("Machine added.")
-            return redirect(url_for("machine_profile", machine_id=machine_id))
-        
-        except Exception as e:
-            conn.rollback()
-            flash(f"Error adding machine: {e}")
-            return redirect(url_for("add_machine"))
-        
-        finally:
-            conn.close()
-        
-    return render_template("add_machine.html", user=session)
 
 @app.route("/manager/work-orders")
 @login_required

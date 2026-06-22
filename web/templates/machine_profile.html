@@ -44,7 +44,7 @@
 
             {% if user.role == "equipment_manager" %}
                 <p>
-                    <a href="{{ url_for('manage_machine_checklist', machine_id=machine.machine_id) }}">
+                    <a href="{{ url_for('machine.manage_machine_checklist', machine_id=machine.machine_id) }}">
                         Manage Checklist
                     </a>
                 </p>

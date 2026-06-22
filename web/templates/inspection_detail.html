@@ -38,7 +38,7 @@
 
             <p>
                 <strong>Machine:</strong>
-                <a href="{{ url_for('machine_profile', machine_id=inspection.machine_id) }}">
+                <a href="{{ url_for('machine.machine_profile', machine_id=inspection.machine_id) }}">
                     {{ inspection.unit_number }} - {{ inspection.make }} {{ inspection.model }}
                 </a>
             </p>

@@ -45,7 +45,7 @@
                                     <input type="checkbox" name="machine_ids" value="{{ machine.machine_id }}">
                                 </td>
                                 <td>
-                                    <a href="{{ url_for('machine_profile', machine_id=machine.machine_id) }}">
+                                    <a href="{{ url_for('machine.machine_profile', machine_id=machine.machine_id) }}">
                                         {{ machine.unit_number }}
                                     </a>
                                 </td>
@@ -86,7 +86,7 @@
                     {% for machine in machines %}
                         <tr>
                             <td>
-                                <a href="{{ url_for('machine_profile', machine_id=machine.machine_id) }}">
+                                <a href="{{ url_for('machine.machine_profile', machine_id=machine.machine_id) }}">
                                     {{ machine.unit_number }}
                                 </a>
                             </td>
