@@ -35,7 +35,7 @@
                 <h2>Assign Mechanic</h2>
 
                 <form method="POST"
-                    action="{{ url_for('assign_work_order_mechanic_route', work_order_id=work_order.work_order_id) }}">
+                    action="{{ url_for('work_order.assign_work_order_mechanic_route', work_order_id=work_order.work_order_id) }}">
 
                     <select name="mechanic_id">
                         <option value="">-- Select Mechanic --</option>
@@ -59,7 +59,7 @@
             <h2>Work Order Status</h2>
 
             <form method="POST"
-                action="{{ url_for('update_work_order_status_route', work_order_id=work_order.work_order_id) }}">
+                action="{{ url_for('work_order.update_work_order_status_route', work_order_id=work_order.work_order_id) }}">
                 <select name="status">
 
                     {% if user.role == "equipment_manager" %}
@@ -190,7 +190,7 @@
 
             <hr>
 
-            <form method="POST" action="{{ url_for('add_work_order_comment_route', work_order_id=work_order.work_order_id) }}">
+            <form method="POST" action="{{ url_for('work_order.add_work_order_comment_route', work_order_id=work_order.work_order_id) }}">
                 <textarea name="comment"
                 rows="4"
                 style="width: 100%"
@@ -227,7 +227,7 @@
                             <td>{{ part.quantity }}</td>
                             <td>
                                 <form method="POST" 
-                                    action="{{ url_for('update_work_order_part_status_route', work_order_id=work_order.work_order_id, part_id=part.part_id) }}">
+                                    action="{{ url_for('part.update_work_order_part_status_route', work_order_id=work_order.work_order_id, part_id=part.part_id) }}">
 
                                     <select name="status">
                                         <option value="needed" {{ "selected" if part.status == "needed" else "" }}>Needed</option>
@@ -254,7 +254,7 @@
         <div class="card">
             <h2>Add Part</h2>
 
-            <form method="POST" action="{{ url_for('add_work_order_part_route', work_order_id=work_order.work_order_id) }}">
+            <form method="POST" action="{{ url_for('part.add_work_order_part_route', work_order_id=work_order.work_order_id) }}">
                 <label><strong>Part Number</strong></label>
                 <br>
                 <input type="text" name="part_number">

@@ -4,8 +4,8 @@
         <a href="{{ url_for('machine.machines') }}">Machines</a>
         <a href="{{ url_for('inspection.inspections') }}">Inspections</a>
         {% if session["role"] == "equipment_manager" %}
-            <a href="{{ url_for('manager_work_orders') }}">Work Orders</a>
-            <a href="{{ url_for('manager_parts') }}">Parts</a>
+            <a href="{{ url_for('work_order.manager_work_orders') }}">Work Orders</a>
+            <a href="{{ url_for('part.manager_parts') }}">Parts</a>
             <a href="#">Mechanics</a>
         {% endif %}
     </div>

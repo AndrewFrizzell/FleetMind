@@ -39,7 +39,7 @@
                             {% for wo in orders %}
                                 <tr>
                                     <td>
-                                        <a href="{{ url_for('work_order_detail', work_order_id=wo.work_order_id) }}">
+                                        <a href="{{ url_for('work_order.work_order_detail', work_order_id=wo.work_order_id) }}">
                                             {{ wo.work_order_id }}
                                         </a>
                                     </td>

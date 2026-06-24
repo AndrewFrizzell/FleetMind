@@ -5,6 +5,6 @@ def login_required(view_func):
     @wraps(view_func)
     def wrapper (*args, **kwargs):
         if "user_id" not in session:
-            return redirect(url_for("login"))
+            return redirect(url_for("auth.login"))
         return view_func(*args, **kwargs)
     return wrapper

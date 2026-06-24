@@ -29,7 +29,7 @@
         <div class="card">
             <h2>Add Chacklist Item</h2>
 
-            <form method="POST" action="{{ url_for('add_machine_checklist_item', machine_id=machine_id) }}">
+            <form method="POST" action="{{ url_for('machine.add_machine_checklist_item', machine_id=machine_id) }}">
                 <h3>Select Items for Checklist</h3>
 
                     {% for item in master_items %}
@@ -80,7 +80,7 @@
                             <td>{{ item["description"] }}</td>
                             <td>{{ "Yes" if item["required"] == 1 else "No" }}</td>
                             <td>
-                                <form method="POST" action="{{ url_for('remove_machine_checklist_item') }}">
+                                <form method="POST" action="{{ url_for('machine.remove_machine_checklist_item') }}">
                                     <input type="hidden" name="machine_checklist_item_id" value="{{ item['machine_checklist_item_id'] }}">
                                     <input type="hidden" name="machine_id" value="{{ machine_id }}">
                                     <button type="submit" class="danger">Remove</button>

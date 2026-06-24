@@ -119,8 +119,10 @@ def add_machine():
             flash("Machine added.")
             return redirect(url_for("machine.machine_profile", machine_id=machine_id))
         
+        
         except Exception as e:
             conn.rollback()
+            print("ADD MACHINE ERROR:", e)
             flash(f"Error adding machine: {e}")
             return redirect(url_for("machine.add_machine"))
         
