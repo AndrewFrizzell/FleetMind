@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Add Maintenance Schedule</title>
+</head>
+<body>
+    <div class="contianet">
+        <div class="header">
+            <div>
+                <h1>Add Maintenance Schedule</h1>
+                <p class="muted">
+                    {{ machine.unit_number }} - {{ machine.make }} {{ machine.model }}
+                </p>
+                {% include "partials/navbar.html" %}
+                {% include "partials/flag.html" %}
+            </div>
+        </div>
+
+        <div class="card">
+            <form method="POST">
+                <label><strong>Name</strong></label>
+                <input type="text" name="name" placeholder="Engine Oil Change" required>
+
+                <br><br>
+
+                <label><strong>Description</strong></label>
+                <textarea name="description" rows="3" style="width: 100%;"
+                        placeholder="Example: Engine oil and filter service"></textarea>
+
+                <br><br>
+
+                <label><strong>Interval Type</strong></label>
+                <select name="interval_type" required>
+                    <option value="hours">Hours</option>
+                    <option value="miles">Miles</option>
+                    <option value="days">Days</option>
+                </select>
+
+                <br><br>
+
+                <label><strong>Interval</strong></label>
+                <input type="number"
+                        name="interval_value"
+                        step="0.01"
+                        placeholder="250"
+                        required>
+
+                <br><br>
+
+                <label><strong>Start Tracking Meter</strong></label>
+                <input type="number" name="start_meter" step="0.01"
+                    value="{{ machine.current_meter_reading }}">
+
+                <br><br>
+
+                <label><strong>Start Tracking Date</strong></label>
+                <input type="date" name="start_date">
+
+                <br><br>
+
+                <button type="submit" class="primary">
+                    Add Schedule
+                </button>
+
+                <a href="{{url_for('machine.machine_profile', machine_id=machine.machine_id) }}">
+                    cancel
+                </a>
+            </form>
+        </div>
+
+    </div>
+    
+</body>
+</html>

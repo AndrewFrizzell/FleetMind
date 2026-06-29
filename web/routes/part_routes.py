@@ -15,8 +15,7 @@ from logic_mods.parts import (
     add_work_order_part,
     get_all_work_order_parts,
     update_work_order_part_status,
-    get_work_order_part_by_id,
-    get_work_order_parts
+    get_work_order_part_by_id
 )
 
 from logic_mods.work_orders import (

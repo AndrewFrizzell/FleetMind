@@ -270,6 +270,38 @@ def create_tables(conn):
     );
     """)
 
+    #machine maintence items 
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS MaintenanceSchedule (
+            maintenance_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            machine_id INTEGER NOT NULL,
+
+            name TEXT NOT NULL,
+            description TEXT,
+
+            interval_type TEXT NOT NULL
+                CHECK (interval_type IN ('hours', 'miles', 'days')),
+
+            interval_value REAL NOT NULL,
+
+            last_completed_meter REAL,
+            last_completed_date TEXT,
+
+            next_due_meter REAL,
+            next_due_date TEXT,
+                   
+            open_work_order_id INTEGER,
+
+            enabled INTEGER NOT NULL DEFAULT 1,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+
+            FOREIGN KEY (machine_id) REFERENCES Machine(machine_id),
+            FOREIGN KEY (open_work_order_id) REFERENCES Workorder(work_order_id),
+
+            UNIQUE(machine_id, name)    
+            );
+    """)
+
 if __name__ == "__main__":
     conn = get_connection()   
     create_tables(conn)

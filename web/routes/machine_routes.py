@@ -1,3 +1,5 @@
+import sqlite3
+
 from flask import ( 
     Blueprint, 
     render_template, 
@@ -23,6 +25,13 @@ from logic_mods.machines import (
     remove_item_from_machine_checklist,
     create_machine,
     create_master_checklist_item
+)
+
+from logic_mods.maintenance import (
+    get_maintenance_schedules_for_machine,
+    get_maintenance_schedule_by_id,
+    create_machine_schedule,
+    
 )
 
 machine_bp = Blueprint("machine", __name__)
@@ -61,6 +70,7 @@ def machine_profile(machine_id):
     open_work_orders = get_open_work_orders_for_machine(conn, machine_id)
     recent_inspections = get_recent_inspections_for_machine(conn, machine_id)
     machine_checklist = get_machine_checklist(conn, machine_id)
+    maintenance_schedules = get_maintenance_schedules_for_machine(conn, machine_id)
     conn.close()
 
     return render_template(
@@ -70,7 +80,8 @@ def machine_profile(machine_id):
         open_work_orders=open_work_orders,
         recent_inspections=recent_inspections,
         machine_checklist=machine_checklist,
-        open_faults=open_faults
+        open_faults=open_faults,
+        maintenance_schedules=maintenance_schedules
     )
 
 
@@ -119,7 +130,22 @@ def add_machine():
             flash("Machine added.")
             return redirect(url_for("machine.machine_profile", machine_id=machine_id))
         
-        
+        except sqlite3.IntegrityError as e:
+            conn.rollback()
+
+            error_text = str(e)
+
+            if "Machine.unit_number" in error_text:
+                flash("Unit number already exists.")
+            elif "Machine.serial_number" in error_text:
+                flash("Serial number already exists.")
+            elif "Machine.vin_number" in error_text:
+                flash("VIN number already exists.")
+            else:
+                flash("Unable to save machine.")
+            return redirect (url_for("machine.add_machine"))
+
+
         except Exception as e:
             conn.rollback()
             print("ADD MACHINE ERROR:", e)
@@ -199,3 +225,62 @@ def remove_machine_checklist_item():
     conn.close()
 
     return redirect(url_for("machine.manage_machine_checklist", machine_id=int(machine_id)))
+
+
+@machine_bp.route("/machines/<int:machine_id>/maintenance/add", methods=["GET", "POST"])
+@login_required
+def add_machine_maintenance_schedule(machine_id):
+
+    if session.get("role") != "equipment_manager":
+        return "Forbidden", 403
+    
+    conn = get_connection()
+    machine = get_machine_by_id(conn, machine_id)
+
+    if machine is None:
+        conn.close()
+        return "Machine not found", 404
+    
+    if request.method == "POST":
+        name = (request.form.get("name") or "").strip()
+        description = (request.form.get("description") or "").strip()
+        interval_type = request.form.get("interval_type")
+        interval_value = request.form.get("interval_value") or None
+        start_meter = request.form.get("start_meter") or None
+        start_date = request.form.get("start_date") or None
+
+        if not name or not interval_type or not interval_value:
+            conn.close()
+            flash("Name, interval type, and intervale value are required.")
+            return redirect(url_for("machine.add_machine_maintenance_schedule", machine_id=machine_id))
+        
+        try:
+            create_machine_schedule(
+                conn,
+                machine_id=machine_id,
+                name=name,
+                description=description,
+                interval_type=interval_type,
+                interval_value=float(interval_value),
+                last_completed_meter=float(start_meter) if start_meter else None,
+                last_completed_date=start_date
+            )
+        
+            flash("Maintenance schedule added.")
+            return redirect(url_for("machine.machine_profile", machine_id=machine_id))
+        
+        except Exception as e:
+            conn.rollback()
+            flash(f"Error adding maintenance schedule: {e}")
+            return redirect(url_for("machine.add_machine_maintenance_schedule", machine_id=machine_id))
+        
+        finally:
+            conn.close()
+
+    conn.close()
+
+    return render_template(
+        "add_maintenance_schedule.html",
+        user=session,
+        machine=machine
+    )

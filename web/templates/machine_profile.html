@@ -84,6 +84,72 @@
         </div>
 
         <div class="card">
+            <h2>Scheduled Maintenance</h2>
+
+            {% if maintenance_schedules and maintenance_schedules|length > 0 %}
+                <table>
+                    <tr>
+                        <th>Maintenance</th>
+                        <th>Interval</th>
+                        <th>Last Completed</th>
+                        <th>Next Due</th>
+                        <th>Remaining</th>
+                    </tr>
+
+                    {% for item in maintenance_schedules %}
+                        <tr>
+                            <td>
+                                <strong>{{ item.name }}</strong>
+                                <br>
+                                <span class="muted">{{ item.description or "" }}</span>
+                            </td>
+
+                            <td>
+                                Every {{ item.interval_value }} {{ item.interval_type }}
+                            </td>
+
+                            <td>
+                                {% if item.interval_type in ["hours", "miles"] %}
+                                    {{ item.last_completed_meter or "N/A" }}
+                                {% else %}
+                                    {{ item.last_completed_date or "N/A" }}
+                                {% endif %}
+                            </td>
+
+                            <td>
+                                {% if item.interval_type in ["hours", "miles"] %}
+                                    {{ item.next_due_meter or "N/A" }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </td>
+
+                            <td>
+                                {% if item.interval_type in ["hours", "miles"] and item.next_due_meter %}
+                                    {{ item.next_due_meter - item.current_meter_reading }} {{ item.interval_type }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </td>
+
+                        </tr>
+                    {% endfor %}
+                </table>
+            {% else %}
+                <p>No maintenance schedules added yet.</p>
+            {% endif %}
+
+            {% if user.role == "equipment_manager" %}
+                <p>
+                    <a class="primary" href="{{ url_for('machine.add_machine_maintenance_schedule', 
+                                        machine_id=machine.machine_id) }}">
+                                        + Add Maintenance Schedule
+                                    </a>
+                </p>
+            {% endif %}
+        </div>
+
+        <div class="card">
             <h2>Open Work Orders</h2>
             {% if open_work_orders and open_work_orders|length > 0 %}
                 <table>
