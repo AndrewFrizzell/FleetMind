@@ -84,3 +84,36 @@ def get_maintenance_schedule_by_id(conn, maintenance_id):
 
     return cur.fetchone()
 
+def get_all_maintenance_schedules(conn):
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT
+            ms.*,
+            m.machine_id,
+            m.unit_number,
+            m.make,
+            m.model,
+            m.current_meter_reading,
+            m.meter_type,
+                
+            CASE
+                WHEN ms.interval_type IN ('hours', 'miles')
+                    AND ms.next_due_meter is NOT NULL
+                THEN ms.next_due_meter - m.current_meter_reading
+                ELSE NULL
+            END AS remaining_meter
+        FROM MaintenanceSchedule ms
+        JOIN Machine m
+            ON ms.machine_id = m.machine_id
+        WHERE ms.enabled = 1
+        ORDER BY 
+            CASE
+                WHEN remaining_meter IS NULL THEN 999999
+                ELSE remaining_meter
+            END ASC
+        
+    """)
+
+    return cur.fetchall()
+

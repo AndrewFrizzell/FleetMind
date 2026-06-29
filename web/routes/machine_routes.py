@@ -284,3 +284,4 @@ def add_machine_maintenance_schedule(machine_id):
         user=session,
         machine=machine
     )
+
