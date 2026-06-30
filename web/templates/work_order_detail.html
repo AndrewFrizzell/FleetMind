@@ -18,7 +18,8 @@
 
         <div class="card">
             <h2>Work Order Info</h2>
-
+            
+            <p><strong>Type:</strong> {{ work_order.work_order_type or "repair" }}</p>
             <p><strong>Status:</strong> {{ work_order.status }}</p>
             <p><strong>Priority:</strong> {{ work_order.priority }}</p>
             <p><strong>Created:</strong> {{ work_order.created_at }}</p>

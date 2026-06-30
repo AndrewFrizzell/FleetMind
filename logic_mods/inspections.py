@@ -159,9 +159,10 @@ def save_inspection_items(conn, inspection_id, machine_id, operator_id, results)
                         created_by,
                         status,
                         priority,
+                        work_order_type,
                         notes        
                     )
-                    VALUES (?, ?, 'open', 2, ?)
+                    VALUES (?, ?, 'open', 2, 'repair', ?)
                 """, (
                     machine_id,
                     operator_id,

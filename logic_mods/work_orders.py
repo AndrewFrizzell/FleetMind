@@ -74,6 +74,8 @@ def get_work_order_by_id(conn, work_order_id):
             wo.created_at,
             wo.completed_at,
             wo.notes,
+            wo.work_order_type,
+            wo.maintenance_id,
                 
             m.unit_number,
             m.serial_number,
@@ -236,14 +238,26 @@ def update_work_order_status(conn, work_order_id, new_status):
     
     cur = conn.cursor()
 
-    cur.execute("""
-        UPDATE WorkOrder
-        SET status = ?
-        WHERE work_order_id = ?
-    """, (
-        new_status,
-        work_order_id
-    ))
+    if new_status in ["repair_complete", "closed"]:
+        cur.execute("""
+            UPDATE WorkOrder
+            SET status = ?,
+                completed_at = datetime('now')
+            WHERE work_order_id = ?
+        """, (
+            new_status,
+            work_order_id
+        ))
+    else:
+        cur.execute("""
+            UPDATE WorkOrder
+            SET status = ?,
+                    completed_at = NULL
+            WHERE work_order_id = ?
+        """, (
+            new_status,
+            work_order_id
+        ))
 
     conn.commit()
 

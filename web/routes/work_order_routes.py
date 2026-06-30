@@ -36,6 +36,10 @@ from logic_mods.users import (
     get_user_by_id
 )
 
+from logic_mods.maintenance import (
+    complete_maintenance_schedule
+)
+
 work_order_bp = Blueprint("work_order", __name__)
 
 @work_order_bp.route("/work-orders/<int:work_order_id>")
@@ -225,7 +229,10 @@ def update_work_order_status_route(work_order_id):
             cur = conn.cursor()
             
             cur.execute("""
-                SELECT machine_id
+                SELECT 
+                    machine_id,
+                    work_order_type,
+                    maintenance_id
                 FROM WorkOrder
                 WHERE work_order_id = ?
              """, (work_order_id,))
@@ -234,24 +241,41 @@ def update_work_order_status_route(work_order_id):
 
             if row:
                 machine_id = row["machine_id"]
+
+                if row["work_order_type"] == "repair":
                 
-                close_machine_fault_for_work_order(
-                    conn,
-                    work_order_id
-                )
+                    close_machine_fault_for_work_order(
+                        conn,
+                        work_order_id
+                    )
 
-                refresh_machine_operational_state(
-                    conn,
-                    machine_id
-                )
+                    refresh_machine_operational_state(
+                        conn,
+                        machine_id
+                    )
 
-                add_work_order_event(
-                    conn,
-                    work_order_id,
-                    "repair_complete",
-                    "Repair marked complete. Linked fault closed and machine status refreshed.",
-                    session["user_id"]
-                )
+                    add_work_order_event(
+                        conn,
+                        work_order_id,
+                        "repair_complete",
+                        "Repair marked complete. Linked fault closed and machine status refreshed.",
+                        session["user_id"]
+                    )
+                
+                elif row["work_order_type"] == "maintenance" and row["maintenance_id"]:
+
+                    complete_maintenance_schedule(
+                        conn,
+                        row["maintenance_id"]
+                    )
+
+                    add_work_order_event(
+                        conn,
+                        work_order_id,
+                        "maintenance_complete",
+                        "maintenance marked complete. Maintenance schedule was reset.",
+                        session["user_id"]
+                    )
 
         flash("Work order status updated.")
 
