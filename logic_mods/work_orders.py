@@ -91,7 +91,16 @@ def get_work_order_by_id(conn, work_order_id):
             mf.status AS fault_status,
             mf.first_reported_at,
             mf.last_reported_at,
-            mf.closed_at AS fault_closed_at
+            mf.closed_at AS fault_closed_at,
+            
+            ms.name AS maintenance_name,
+            ms.description AS maintenance_description,
+            ms.interval_type AS maintenance_interval_type,
+            ms.interval_value AS maintenance_interval_value,
+            ms.last_completed_meter AS maintenance_last_completed_meter,
+            ms.last_completed_date AS maintenance_last_completed_date,
+            ms.next_due_meter AS maintenance_next_due_meter,
+            ms.next_due_date AS maintenance_open_work_order_id
                 
         FROM WorkOrder wo
         JOIN Machine m
@@ -102,6 +111,8 @@ def get_work_order_by_id(conn, work_order_id):
             ON wo.assigned_to = mechanic.user_id
         LEFT JOIN MachineFault mf
             ON mf.work_order_id = wo.work_order_id
+        LEFT JOIN MaintenanceSchedule ms
+            ON wo.maintenance_id = ms.maintenance_id
         WHERE wo.work_order_id = ?
     """, (work_order_id,))
     

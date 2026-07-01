@@ -150,19 +150,43 @@
             </p>
         </div>
 
-        <div class="card">
-            <h2>Link Fault</h2>
 
-            {% if work_order.fault_id %}
-                <p><strong>Fault:</strong> {{ work_order.fault_item_name }}</p>
-                <p><strong>Status:</strong> {{ work_order.fault_status }}</p>
-                <p><strong>First Reported:</strong> {{ work_order.first_reported_at }}</p>
-                <p><strong>Last Reported:</strong> {{ work_order.last_reported_at or "N/A" }}</p>
-                <p><strong>Closed:</strong> {{ work_order.fault_closed_at or "Not closed"}}</p>
-            {% else %}
-                <p>No linked machine fault.</p>
-            {% endif %}
-        </div>
+        {% if work_order.work_order_type == "repair" %}
+            <div class="card">
+                <h2>Link Fault</h2>
+
+                {% if work_order.fault_id %}
+                    <p><strong>Fault:</strong> {{ work_order.fault_item_name }}</p>
+                    <p><strong>Status:</strong> {{ work_order.fault_status }}</p>
+                    <p><strong>First Reported:</strong> {{ work_order.first_reported_at }}</p>
+                    <p><strong>Last Reported:</strong> {{ work_order.last_reported_at or "N/A" }}</p>
+                    <p><strong>Closed:</strong> {{ work_order.fault_closed_at or "Not closed"}}</p>
+                {% else %}
+                    <p>No linked machine fault.</p>
+                {% endif %}
+            </div>
+        {% elif work_order.work_order_type == "maintenance" %}
+            <div class="card">
+                <h2>Maintenance Schedule</h2>
+
+                {% if work_order.maintenance_id %}
+                    <p><strong>Maintenance:</strong> {{ work_order.maintenance_name }}</p>
+                    <p><strong>Description:</strong> {{ work_order.maintenance_description or "N/A" }}</p>
+                    <p><strong>Interval:</strong> {{ work_order.maintenance_interval_value }} {{ work_order.maintenance_interval_type }}</p>
+
+                    {% if work_order.maintenance_interval_type in ["hours", "miles"] %}
+                        <p><strong>Last Service:</strong> {{ work_order.maintenance_last_completed_meter or "M/A" }}</p>
+                        <p><strong>Next Due:</strong> {{ work_order.maintenance_next_due_meter or "N/A" }}</p>
+                    {% else %}
+                        <p><strong>Last Service:</strong> {{ work_order.maintenance_last_service_date or "N/A" }}</p>
+                        <p><strong>Next Due:</strong> {{ work_order.maintenance_next_due_date or "N/A" }}</p>
+                    {% endif %}
+                {% else %}
+                    <p>No linked service schedule.</p>
+                {% endif %}
+            </div>
+        {% endif %}
+
 
         <div class="card">
             <h2>Timeline</h2>
