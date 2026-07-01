@@ -181,7 +181,11 @@ def create_tables(conn):
             CHECK (priority IN (1, 2, 3)),
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
         completed_at TEXT,
+        work_order_type TEXT NOT NULL DEFAULT 'repair',
+        maintenance_id INTEGER,
         notes TEXT,
+                   
+
         FOREIGN KEY (machine_id) REFERENCES Machine(machine_id),
         FOREIGN KEY (created_by) REFERENCES User(user_id),
         FOREIGN KEY (assigned_to) REFERENCES User(user_id)
@@ -265,7 +269,8 @@ def create_tables(conn):
         note TEXT,
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
                    
-        FOREIGN KEY (work_order_id) REFERENCES WorkOrder(work_order_id)
+        FOREIGN KEY (work_order_id) REFERENCES WorkOrder(work_order_id),
+        FOREIGN KEY (part_id) REFERENCES Part(part_id)
 
     );
     """)
@@ -301,6 +306,21 @@ def create_tables(conn):
             UNIQUE(machine_id, name)    
             );
     """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS Part (
+        part_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        part_number TEXT,
+        name TEXT NOT NULL,
+        description TEXT,
+        manufacturer TEXT,
+        unit_of_measure TEXT DEFAULT 'each',
+        default_cost REAL,
+        active INTEGER NOT NULL DEFAULT 1,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+    """)
+
 
 if __name__ == "__main__":
     conn = get_connection()   
