@@ -252,7 +252,7 @@
                             <td>{{ part.quantity }}</td>
                             <td>
                                 <form method="POST" 
-                                    action="{{ url_for('part.update_work_order_part_status_route', work_order_id=work_order.work_order_id, part_id=part.part_id) }}">
+                                    action="{{ url_for('part.update_work_order_part_status_route', work_order_id=work_order.work_order_id, part_id=part.work_order_part_id) }}">
 
                                     <select name="status">
                                         <option value="needed" {{ "selected" if part.status == "needed" else "" }}>Needed</option>

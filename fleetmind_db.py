@@ -260,18 +260,20 @@ def create_tables(conn):
     #work order parts table 
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS WorkOrderPart (
-        part_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        work_order_part_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                   
         work_order_id INTEGER NOT NULL,
+        part_id INTEGER,
+        
         part_number TEXT,
         description TEXT NOT NULL,
         quantity REAL NOT NULL DEFAULT 1,
         status TEXT NOT NULL DEFAULT 'needed',
         note TEXT,
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
-                   
+        
         FOREIGN KEY (work_order_id) REFERENCES WorkOrder(work_order_id),
         FOREIGN KEY (part_id) REFERENCES Part(part_id)
-
     );
     """)
 
