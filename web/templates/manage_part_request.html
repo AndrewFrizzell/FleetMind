@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename='syle.css') }}">
+    <title>Manage Part Request</title>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>Manage Part Request</h1>
+                {% include "partials/navbar.html" %}
+                {% include "partials/flag.html" %}
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Part Request</h2>
+
+            <form method="POST">
+                <label><strong>Part Number</strong></label><br>
+                <input type="text" name="part_number" value="{{ part.part_number or '' }}">
+
+                <br><br>
+
+                <label><strong>Description</strong></label><br>
+                <input type="text" name="description" value="{{ part.description }}" required>
+
+                <br><br>
+
+                <label><strong>Quantity</strong></label><br>
+                <input type="number" name="quantity" step="0.01" value="{{ part.quantity }}" required>
+
+                <br><br>
+                <label><strong>Status</strong></label><br>
+                <select name="status" required>
+                    <option value="needed" {{ "selsected" if part.status == "needed" else ""}}>Needed</option>
+                    <option value="ordered" {{ "selected" if part.status == "ordered" else ""}}>Ordered</option>
+                    <option value="recieved" {{ "selected" if part.status == "recieved" else ""}}>Recieved</option>
+                    <option value="installed" {{ "selected" if part.status == "installed" else ""}}>Installed</option>
+                </select>
+
+                <br><br>
+
+                <label><strong>Notes</strong></label><br>
+                <textarea name="note" rows="4" style="width: 100%">{{ part.note or "" }}</textarea>
+
+                <br><br>
+
+                <button type="submit" class="primary">Save Part Request</button>
+
+                <a href="{{ url_for('work_order.work_order_detail', work_order_id=part.work_order_id) }}">
+                    cancel
+                </a>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

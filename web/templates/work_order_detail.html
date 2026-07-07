@@ -282,13 +282,13 @@
             <form method="POST" action="{{ url_for('part.add_work_order_part_route', work_order_id=work_order.work_order_id) }}">
                 <label><strong>Part Number</strong></label>
                 <br>
-                <input type="text" name="part_number">
+                <input type="text" name="part_number" placeholder="Optional">
 
                 <br><br>
 
-                <label><strong>Description</strong></label>
+                <label><strong>Part Name / Description</strong></label>
                 <br>
-                <input type="text" name="description" required>
+                <input type="text" name="description" placeholder="Oil Filter" required>
 
                 <br><br>
 

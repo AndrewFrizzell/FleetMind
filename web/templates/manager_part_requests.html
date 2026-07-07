@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Part Requests</title>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>Part Requests</h1>
+                {% include "partials/navbar.html" %}
+                {% include "partials/flag.html" %}
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Open Part Requests</h2>
+
+            {% if part_request and part_request|length > 0 %}
+                <table>
+                    <tr>
+                        <th>Work Order</th>
+                        <th>Machine</th>
+                        <th>Requested Part</th>
+                        <th>Part Number</th>
+                        <th>Qty</th>
+                        <th>Status</th>
+                        <th>Note</th>
+                        <th>Action</th>
+                    </tr>
+
+                    {% for part in part_request %}
+                        <tr>
+                            <td>
+                                <a href="{{ url_for('work_order.work_order_detail', work_order_id=part.work_order_id) }}">
+                                    WO# {{ part.work_order_id }}
+                                </a>
+                                <br>
+                                <span class="muted">{{ part.work_order_status }}</span>
+                            </td>
+
+                            <td>
+                                <a href="{{url_for('machine.machine_profile', machine_id=part.machine_id) }}">
+                                    {{ part.unit_number }}
+                                </a>
+                                <br>
+                                <span class="muted">{{ part.make }} {{ part.model }}</span>
+                            </td>
+
+                            <td>{{ part.description }}</td>
+                            <td>{{ part.part_number or "unknown" }}</td>
+                            <td>{{ part.quantity }}</td>
+                            <td>{{ part.status }}</td>
+                            <td>{{ part.note or "" }}</td>
+
+                           <td>
+                                <a href="{{ url_for('part.manage_part_request', work_order_part_id=part.work_order_part_id) }}">
+                                    manage
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            {% else %}
+                <p>No open part requests</p>
+            {% endif %}
+        </div>
+    </div>
+    
+</body>
+</html>

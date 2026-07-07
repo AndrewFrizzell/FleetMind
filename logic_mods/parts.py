@@ -18,22 +18,25 @@ def add_work_order_part(
     description,
     quantity,
     status,
-    note
+    note,
+    part_id=None
 ):
     cur = conn.cursor()
 
     cur.execute("""
         INSERT INTO WorkOrderPart (
             work_order_id,
+            part_id,
             part_number,
             description,
             quantity,
             status,
             note
         )
-        VALUES (?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
     """, (
         work_order_id,
+        part_id,
         part_number,
         description,
         quantity,
@@ -118,3 +121,57 @@ def get_all_work_order_parts(conn):
     """)
 
     return cur.fetchall()
+
+def get_open_part_requests(conn):
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT 
+            wop.*,
+            wo.work_order_id,
+            wo.status AS work_order_status,
+            wo.work_order_type,
+            m.machine_id,
+            m.unit_number,
+            m.make,
+            m.model
+        FROM WorkOrderPart wop
+        JOIN WorkOrder wo
+            ON wop.work_order_id = wo.work_order_id
+        JOIN Machine m
+            ON wo.machine_id = m.machine_id
+        WHERE wop.status != 'installed'
+        ORDER BY wop.created_at DESC
+    """)
+
+    return cur.fetchall()
+
+def update_work_order_part_details(
+        conn,
+        work_order_part_id,
+        part_number,
+        description,
+        quantity,
+        status,
+        note
+):
+    cur = conn.cursor()
+
+    cur.execute("""
+        UPDATE WorkOrderPart
+        SET part_number = ?,
+            description = ?,
+            quantity = ?,
+            status = ?,
+            note = ?
+        WHERE work_order_part_id = ?
+    """, (
+        part_number,
+        description,
+        quantity,
+        status,
+        note,
+        work_order_part_id
+    ))
+
+    conn.commit()
