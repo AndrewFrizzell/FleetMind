@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Add Catalog Part</title>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>Add Catalog Part</h1>
+                {% include "partials/navbar.html" %}
+                {% include "partials/flag.html" %}
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>New catalog Part</h2>
+
+            <form method="POST">
+
+                <label><strong>Part Number</strong></label>
+                <br>
+                <input 
+                    type="text" 
+                    name="part_number" 
+                    style="width: 100%;">
+
+                <br><br>
+
+                <label><strong>Part Name</strong></label>
+                <br>
+                <input 
+                    type="text" 
+                    name="name" 
+                    required 
+                    style="width: 100%;">
+
+                <br><br>
+
+                <label><strong>Description</strong></label>
+                <br>
+                <textarea 
+                    name="description" 
+                    rows="4"
+                    style="width: 100%;"></textarea>
+
+                <br><br>
+
+                <label><strong>Manufacturer</strong></label>
+                <br>
+                <input 
+                    type="text" 
+                    name="manufacturer"
+                    style="width: 100%;">
+
+                <br><br>
+
+                <label><strong>Unit of Measure</strong></label>
+                <br>
+                <select name="unit_of_measure">
+                    
+                    <option value="each">Each</option>
+                    <option value="box">Box</option>
+                    <option value="case">Case</option>
+                    <option value="gallon">Gallon</option>
+                    <option value="quart">Quart</option>
+                    <option value="foot">Foot</option>
+                    <option value="roll">Roll</option>
+                    
+                </select>
+
+                <br><br>
+
+                <label><strong>Default Cost</strong></label>
+                <br>
+                <input 
+                    type="number"
+                    name="default_cost"
+                    step="0.01">
+
+                <br><br>
+
+                <button class="primary" type="submit">
+                    Add Catalog Part
+                </button>
+
+                <a href="{{ url_for('part.manager_parts') }}">
+                    Cancel
+                </a>
+
+                {% if work_order_part_id %}
+                    <input type="hidden" name="work_order_part_id" value="{{ work_order_part_id }}">
+                {% endif %}
+
+            </form>
+        </div>
+    </div>
+    
+</body>
+</html>

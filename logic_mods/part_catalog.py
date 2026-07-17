@@ -24,7 +24,7 @@ def create_part(
             unit_of_measure,
             default_cost       
         )
-        VALUES (?, ?, ?, ?, ?, ?, )
+        VALUES (?, ?, ?, ?, ?, ?)
     """, (
         part_number,
         name,
@@ -37,7 +37,7 @@ def create_part(
     conn.commit()
     return cur.lastrowid
 
-def get_all_parts_by_id(conn, part_id):
+def get_part_by_id(conn, part_id):
     cur = conn.cursor()
 
     cur.execute("""

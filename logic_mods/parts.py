@@ -175,3 +175,38 @@ def update_work_order_part_details(
     ))
 
     conn.commit()
+
+def link_catalog_part_to_request(
+    conn,
+    work_order_part_id,
+    catalog_part_id
+):
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT *
+        FROM Part
+        WHERE part_id = ?
+            AND active = 1
+    """, (catalog_part_id,))
+
+    catalog_part = cur.fetchone()
+
+    if catalog_part is None:
+        raise ValueError("Catalog part not found.")
+    
+    cur.execute("""
+        UPDATE WorkOrderPart
+        SET part_id = ?,
+            part_number = ?,
+            description = ?
+        WHERE work_order_part_id = ?
+    """, (
+        catalog_part["part_id"],
+        catalog_part["part_number"],
+        catalog_part["name"],
+        work_order_part_id
+    ))
+
+    conn.commit()
+    

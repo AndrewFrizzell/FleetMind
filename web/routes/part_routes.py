@@ -17,7 +17,8 @@ from logic_mods.parts import (
     update_work_order_part_status,
     get_work_order_part_by_id,
     get_open_part_requests,
-    update_work_order_part_details
+    update_work_order_part_details,
+    link_catalog_part_to_request
 )
 
 from logic_mods.work_orders import (
@@ -28,7 +29,8 @@ from logic_mods.work_orders import (
 from logic_mods.part_catalog import (
     get_all_parts,
     search_parts,
-    get_all_parts_by_id,
+    get_part_by_id,
+    create_part
 )
 
 part_bp = Blueprint("part", __name__)
@@ -191,10 +193,21 @@ def manage_part_request(work_order_part_id):
     
     conn = get_connection()
     part = get_work_order_part_by_id(conn, work_order_part_id)
-
+   
     if part is None:
         conn.close()
         return "Part request not found.", 404
+    
+    catalog_parts = get_all_parts(conn)
+    
+    linked_part = None
+
+    if part["part_id"]:
+        linked_part = get_part_by_id(
+            conn,
+            part["part_id"]
+        )
+
     
     if request.method == "POST":
         part_number = (request.form.get("part_number") or "").strip()
@@ -236,5 +249,139 @@ def manage_part_request(work_order_part_id):
     return render_template(
         "manage_part_request.html",
         user=session,
-        part=part
+        part=part,
+        catalog_parts=catalog_parts,
+        linked_part=linked_part
+    )
+
+@part_bp.route("/manager/parts/add", methods=["GET", "POST"])
+@login_required
+def add_catalog_part():
+
+    if session.get("role") != "equipment_manager":
+        return "Forbidden", 403
+    
+    work_order_part_id = request.args.get(
+        "work_order_part_id",
+        type=int
+    )
+
+    
+    if request.method == "POST":
+        work_order_part_id = request.form.get("work_order_part_id", type=int)
+        part_number = (request.form.get("part_number") or "").strip()
+        name = (request.form.get("name") or "").strip()
+        description = (request.form.get("description") or "").strip()
+        manufacturer = (request.form.get("manufacturer") or "").strip()
+        unit_of_measure = (request.form.get("unit_of_measure") or "each").strip()
+        default_cost = request.form.get("default_cost") or None
+
+        if not name:
+            flash("Part name is required.")
+            return redirect(url_for("part.add_catalog_part", work_order_part_id=work_order_part_id))
+        
+        conn = get_connection()
+
+        try:
+            create_part(
+                conn,
+                part_number=part_number,
+                name=name,
+                description=description,
+                manufacturer=manufacturer,
+                unit_of_measure=unit_of_measure,
+                default_cost=float(default_cost) if default_cost else None
+            )
+        
+            flash("catalog part added.")
+            if work_order_part_id:
+                return redirect( url_for(
+                    "part.manager_part_request",
+                    work_order_part_id=work_order_part_id
+                ))
+            
+            return redirect(url_for("part.manager_parts"))
+        
+        except Exception as e:
+            conn.rollback()
+            flash(f"Error adding catalog part: {e}")
+            return redirect(url_for("part.add_catalog_part", work_order_part_id=work_order_part_id))
+        
+        finally:
+            conn.close()
+
+    return render_template(
+        "add_catalog_part.html",
+        user=session,
+        work_order_part_id=work_order_part_id
+    )
+
+@part_bp.route(
+    "/part-request/<int:work_order_part_id>/link-catalog", methods=["POST"]
+)
+@login_required
+def link_catalog_part_route(work_order_part_id):
+
+    if session.get("role") != "equipment_manager":
+        return "Forbidden", 403
+    
+    catalog_part_id = request.form.get("catalog_part_id")
+
+    if not catalog_part_id:
+        flash("Select a catalog part.")
+        return redirect(
+            url_for(
+                "part.manage_part_request",
+                work_order_part_id=work_order_part_id
+            )
+        )
+    
+    conn = get_connection()
+
+    try:
+        part_request = get_work_order_part_by_id(
+            conn,
+            work_order_part_id
+        )
+        if part_request is None:
+            return "Part request not found", 404
+        
+        link_catalog_part_to_request(
+            conn,
+            work_order_part_id,
+            int(catalog_part_id)
+        )
+
+        linked_part = get_part_by_id(
+            conn,
+            int(catalog_part_id)
+        )
+
+        add_work_order_event(
+            conn,
+            part_request["work_order_id"],
+            "catalog_part_linked",
+            (
+                f"Part request linked to catalog part: "
+                f"{linked_part['part_number'] or 'No part number'} "
+                f"-{linked_part['name']}"
+            ),
+            session["user_id"]
+        )
+
+        flash("Catalog part linked.")
+
+    except Exception as e:
+        conn.rollback()
+        print("LINK CATALOG PART ERROR:", e)
+        flash(f"Error linking catalog part: {e}")
+
+    finally:
+        conn.close()
+
+    return redirect(
+        url_for(
+            "part.manage_part_request",
+            work_order_part_id=work_order_part_id
+        )
     )

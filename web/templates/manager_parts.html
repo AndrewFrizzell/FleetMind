@@ -20,6 +20,12 @@
         <div class="card">
             <h2>Catalog Parts</h2>
 
+            <p>
+                <a class="primary" href="{{ url_for('part.add_catalog_part') }}">
+                    Add Catalog Part
+                </a>
+            </p>
+
             {% if parts and parts|length > 0 %}
                 <table>
                     <tr>
