@@ -35,6 +35,7 @@
                         <th>Manufacturer</th>
                         <th>Unit</th>
                         <th>Default Cost</th>
+                        <th>Compatible Serials</th>
                     </tr>
 
                     {% for part in parts %}
@@ -49,6 +50,17 @@
                                     ${{ "%.2f"|format(part.default_cost) }}
                                 {% else %}
                                     N/A
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if part.compatible_serials %}
+                                    {% for serial in part.compatible_serials.split(",") %}
+                                        <div>{{ serial }}</div>
+                                    {% endfor %}
+                                {% else %}
+                                    <span class="muted">
+                                        No serial assigned
+                                    </span>
                                 {% endif %}
                             </td>
                         </tr>

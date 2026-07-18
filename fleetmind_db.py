@@ -323,6 +323,20 @@ def create_tables(conn):
         );
     """)
 
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS PartMachineCompatibility (
+        part_machine_compatibility_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        part_id INTERGER NOT NULL,
+        machine_id INTEGER NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+        FOREIGN KEY (part_id) REFERENCES Part(part_id),
+        FOREIGN KEY (machine_id) REFERENCES Machine(machine_id),
+
+        UNIQUE(part_id, machine_id)          
+    );
+    """)
+
 
 if __name__ == "__main__":
     conn = get_connection()   

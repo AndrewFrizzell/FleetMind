@@ -18,7 +18,8 @@ from logic_mods.parts import (
     get_work_order_part_by_id,
     get_open_part_requests,
     update_work_order_part_details,
-    link_catalog_part_to_request
+    link_catalog_part_to_request,
+    add_part_machine_compatibilities
 )
 
 from logic_mods.work_orders import (
@@ -30,7 +31,13 @@ from logic_mods.part_catalog import (
     get_all_parts,
     search_parts,
     get_part_by_id,
-    create_part
+    create_part,
+    get_parts_for_machine
+)
+
+from logic_mods.machines import (
+    get_machine_by_id,
+    get_all_machines
 )
 
 part_bp = Blueprint("part", __name__)
@@ -198,7 +205,10 @@ def manage_part_request(work_order_part_id):
         conn.close()
         return "Part request not found.", 404
     
-    catalog_parts = get_all_parts(conn)
+    catalog_parts = get_parts_for_machine(
+        conn,
+        part["machine_id"]
+    )
     
     linked_part = None
 
@@ -261,60 +271,124 @@ def add_catalog_part():
     if session.get("role") != "equipment_manager":
         return "Forbidden", 403
     
-    work_order_part_id = request.args.get(
-        "work_order_part_id",
-        type=int
-    )
+    conn = get_connection()
+    
+    try:
+        work_order_part_id = request.values.get(
+            "work_order_part_id",
+            type=int
+        )
+
+        request_part = None
+        originating_machine = None
+
+        if work_order_part_id:
+            request_part = get_work_order_part_by_id(
+                conn,
+                work_order_part_id
+            )
+
+            if request_part:
+                originating_machine = get_machine_by_id(
+                    conn,
+                    request_part["machine_id"]
+                )
+
+        machines = get_all_machines(conn)
 
     
-    if request.method == "POST":
-        work_order_part_id = request.form.get("work_order_part_id", type=int)
-        part_number = (request.form.get("part_number") or "").strip()
-        name = (request.form.get("name") or "").strip()
-        description = (request.form.get("description") or "").strip()
-        manufacturer = (request.form.get("manufacturer") or "").strip()
-        unit_of_measure = (request.form.get("unit_of_measure") or "each").strip()
-        default_cost = request.form.get("default_cost") or None
+        if request.method == "POST":
+            part_number = (request.form.get("part_number") or "").strip()
+            name = (request.form.get("name") or "").strip()
+            description = (request.form.get("description") or "").strip()
+            manufacturer = (request.form.get("manufacturer") or "").strip()
+            unit_of_measure = (request.form.get("unit_of_measure") or "each").strip()
+            default_cost = request.form.get("default_cost") or None
+            machine_ids = request.form.getlist(
+                "machine_ids",
+                type=int
+            )
 
-        if not name:
-            flash("Part name is required.")
-            return redirect(url_for("part.add_catalog_part", work_order_part_id=work_order_part_id))
-        
-        conn = get_connection()
+            if not name:
+                flash("Part name is required.")
+                return redirect(url_for("part.add_catalog_part", work_order_part_id=work_order_part_id))
+            
+            if originating_machine:
+                originating_machine_id = originating_machine["machine_id"]
 
-        try:
-            create_part(
+                if originating_machine_id not in machine_ids:
+                    machine_ids.append(originating_machine_id)
+
+            part_id = create_part(
                 conn,
                 part_number=part_number,
                 name=name,
                 description=description,
                 manufacturer=manufacturer,
                 unit_of_measure=unit_of_measure,
-                default_cost=float(default_cost) if default_cost else None
+                default_cost=(
+                    float(default_cost)
+                    if default_cost
+                    else None
+                    )
+                )
+
+            add_part_machine_compatibilities(
+                conn,
+                part_id,
+                machine_ids
+            )
+
+            conn.commit()
+
+            flash("Catalog part added.", "success")
+
+            if work_order_part_id:
+                return redirect(
+                    url_for(
+                        "part.manage_part_request",
+                        work_order_part_id=work_order_part_id
+                    )
+                )
+            
+            return redirect(
+                url_for("part.manager_parts")
             )
         
-            flash("catalog part added.")
-            if work_order_part_id:
-                return redirect( url_for(
-                    "part.manager_part_request",
-                    work_order_part_id=work_order_part_id
-                ))
-            
-            return redirect(url_for("part.manager_parts"))
-        
-        except Exception as e:
-            conn.rollback()
-            flash(f"Error adding catalog part: {e}")
-            return redirect(url_for("part.add_catalog_part", work_order_part_id=work_order_part_id))
-        
-        finally:
-            conn.close()
+        return render_template(
+            "add_catalog_part.html",
+            user=session,
+            work_order_part_id=work_order_part_id,
+            request_part=request_part,
+            originating_machine=originating_machine,
+            machines=machines
+        )
+    
+    except ValueError:
+        conn.rollback()
+        flash("Default cost must be a valid number.", "error")
 
-    return render_template(
-        "add_catalog_part.html",
-        user=session,
-        work_order_part_id=work_order_part_id
-    )
+        return redirect(
+            url_for(
+                "part.add_catalog_part",
+                work_order_part_id=work_order_part_id
+            )
+        )
+    
+    except Exception as e:
+        conn.rollback()
+        flash(f"Error adding catalog part: {e}", "error")
+
+        return redirect(
+            url_for(
+                "part.add_catalog_part",
+                work_order_part_id=work_order_part_id
+            )
+        )
+    
+    finally:
+        conn.close()
+
 
 @part_bp.route(
     "/part-request/<int:work_order_part_id>/link-catalog", methods=["POST"]

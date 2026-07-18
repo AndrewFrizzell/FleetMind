@@ -52,10 +52,26 @@ def get_all_parts(conn):
     cur = conn.cursor()
 
     cur.execute("""
-        SELECT *
-        FROM Part
-        WHERE active = 1
-        ORDER BY name ASC, part_number ASC
+        SELECT 
+            p.*,
+            GROUP_CONCAT(
+                DISTINCT m.unit_number || ' - ' || m.serial_number    
+            ) AS compatible_serials
+        FROM Part p
+        
+        LEFT JOIN PartMachineCompatibility pmc
+            ON p.part_id =pmc.part_id
+                
+        LEFT JOIN Machine m
+            ON pmc.machine_id = m.machine_id
+                
+        WHERE p.active = 1
+                
+        GROUP BY p.part_id
+                
+        ORDER BY 
+            part_number,
+            p.name
     """)
 
     return cur.fetchall()
@@ -114,3 +130,24 @@ def find_existing_part(conn, part_number, name):
     """, (name,))
 
     return cur.fetchone()
+
+def get_parts_for_machine(conn, machine_id):
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT DISTINCT
+            p.*
+        FROM Part p
+                
+        JOIN PartMachineCompatibility pmc
+            ON p.part_id = pmc.part_id
+                
+        WHERE pmc.machine_id = ?
+            AND p.active = 1
+                
+        ORDER BY 
+            p.part_number,
+            p.name
+    """, (machine_id,))
+
+    return cur.fetchall()

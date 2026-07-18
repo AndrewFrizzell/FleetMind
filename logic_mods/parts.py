@@ -44,8 +44,6 @@ def add_work_order_part(
         note
     ))
 
-    conn.commit()
-
     return cur.lastrowid
 
 def get_work_order_parts(conn, work_order_id):
@@ -75,8 +73,23 @@ def get_work_order_part_by_id(conn, work_order_part_id):
     cur = conn.cursor()
 
     cur.execute("""
-        SELECT *
-        FROM WorkOrderPart
+        SELECT 
+            wop.*,
+            wo.machine_id,
+            m.unit_number,
+            m.make,
+            m.model,
+            m.year,
+            m.serial_number,
+            m.vin_number
+        FROM WorkOrderPart wop
+                
+        JOIN WorkOrder wo
+            ON wop.work_order_id = wo.work_order_id
+        
+        JOIN Machine m
+            ON wo.machine_id = m.machine_id
+                
         WHERE work_order_part_id = ?
     """, (work_order_part_id,))
 
@@ -209,4 +222,37 @@ def link_catalog_part_to_request(
     ))
 
     conn.commit()
+
+def add_part_machine_campatibility(conn, part_id, machine_id):
+    cur = conn.cursor()
+
+    cur.execute("""
+        INSERT OR IGNORE INTO PartMachineCompatibility(
+            part_id,
+            machine_id        
+        )
+        VALUES (?, ?)
+    """, (
+        part_id,
+        machine_id
+    ))
+
+    conn.commit()
+
+def add_part_machine_compatibilities(conn, part_id, machine_ids):
+    cur = conn.cursor()
+
+    for machine_id in machine_ids:
+        cur.execute("""
+            INSERT OR IGNORE INTO PartMachineCompatibility (
+                part_id,
+                machine_id        
+            )
+            VALUES (?, ?)
+        """, (
+            part_id,
+            machine_id
+        ))
+
+
     

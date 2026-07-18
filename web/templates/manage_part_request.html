@@ -2,169 +2,456 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
+
     <title>Manage Part Request</title>
 </head>
+
 <body>
+
+    {% include "partials/navbar.html" %}
+    {% include "partials/flag.html" %}
+
     <div class="container">
+
         <div class="header">
             <div>
                 <h1>Manage Part Request</h1>
-                {% include "partials/navbar.html" %}
-                {% include "partials/flag.html" %}
+
+                <p>
+                    Update the request and connect it to a compatible
+                    catalog part.
+                </p>
             </div>
         </div>
 
         <div class="card">
-            <h2>Part Request</h2>
+            <h2>Machine Details</h2>
 
-            <form method="POST">
-                <label><strong>Part Number</strong></label><br>
-                <input type="text" name="part_number" value="{{ part.part_number or '' }}">
+            <div class="machine-summary">
+                <div>
+                    <strong>Unit Number</strong>
+                    <p>
+                        {% if part.machine_id %}
+                            <a href="{{ url_for(
+                                'machine.machine_profile',
+                                machine_id=part.machine_id
+                            )}}">
+                                {{ part.unit_number or "View Machine" }}
+                            </a>
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </p>
+                </div>
 
-                <br><br>
+                <div>
+                    <strong>Machine</strong>
+                    <p>
+                        {{ part.year or "" }}
+                        {{ part.make or "" }}
+                        {{ part.model or "" }}
+                    </p>
+                </div>
 
-                <label><strong>Description</strong></label><br>
-                <input type="text" name="description" value="{{ part.description }}" required>
+                <div>
+                    <strong>Serial Number</strong>
+                    <p>{{ part.serial_number or "N/A" }}</p>
+                </div>
 
-                <br><br>
-
-                <label><strong>Quantity</strong></label><br>
-                <input type="number" name="quantity" step="0.01" value="{{ part.quantity }}" required>
-
-                <br><br>
-                <label><strong>Status</strong></label><br>
-                <select name="status" required>
-                    <option value="needed" {{ "selected" if part.status == "needed" else ""}}>Needed</option>
-                    <option value="ordered" {{ "selected" if part.status == "ordered" else ""}}>Ordered</option>
-                    <option value="received" {{ "selected" if part.status == "recieved" else ""}}>Recieved</option>
-                    <option value="installed" {{ "selected" if part.status == "installed" else ""}}>Installed</option>
-                </select>
-
-                <br><br>
-
-                <label><strong>Notes</strong></label><br>
-                <textarea name="note" rows="4" style="width: 100%">{{ part.note or "" }}</textarea>
-
-                <br><br>
-
-                <button type="submit" class="primary">Save Part Request</button>
-
-                <a href="{{ url_for('work_order.work_order_detail', work_order_id=part.work_order_id) }}">
-                    cancel
-                </a>
-            </form>
+                <div>
+                    <strong>Vin</strong>
+                    <p>{{ part.vin_number or "N/A" }}</p>
+                </div>
+            </div>
         </div>
 
-        
+
         <div class="card">
-            <h2>Catalog Part</h2>
+
+            <div class="card-header">
+                <h2>Part Request Details</h2>
+            </div>
+
+            <form method="POST">
+
+                <div class="form-group">
+                    <label for="part_number">
+                        <strong>Requested Part Number</strong>
+                    </label>
+
+                    <input
+                        type="text"
+                        id="part_number"
+                        name="part_number"
+                        value="{{ part.part_number or '' }}"
+                        style="width: 100%;"
+                    >
+                </div>
+
+                <br>
+
+
+                <div class="form-group">
+                    <label for="description">
+                        <strong>Description</strong>
+                    </label>
+
+                    <input
+                        type="text"
+                        id="description"
+                        name="description"
+                        value="{{ part.description or '' }}"
+                        required
+                        style="width: 100%;"
+                    >
+                </div>
+
+                <br>
+
+
+                <div class="form-group">
+                    <label for="quantity">
+                        <strong>Quantity</strong>
+                    </label>
+
+                    <input
+                        type="number"
+                        id="quantity"
+                        name="quantity"
+                        min="0"
+                        step="0.01"
+                        value="{{ part.quantity }}"
+                        required
+                    >
+                </div>
+
+                <br>
+
+
+                <div class="form-group">
+                    <label for="status">
+                        <strong>Status</strong>
+                    </label>
+
+                    <select
+                        id="status"
+                        name="status"
+                        required
+                    >
+                        <option
+                            value="needed"
+                            {% if part.status == "needed" %}selected{% endif %}
+                        >
+                            Needed
+                        </option>
+
+                        <option
+                            value="ordered"
+                            {% if part.status == "ordered" %}selected{% endif %}
+                        >
+                            Ordered
+                        </option>
+
+                        <option
+                            value="received"
+                            {% if part.status == "received" %}selected{% endif %}
+                        >
+                            Received
+                        </option>
+
+                        <option
+                            value="installed"
+                            {% if part.status == "installed" %}selected{% endif %}
+                        >
+                            Installed
+                        </option>
+                    </select>
+                </div>
+
+                <br>
+
+
+                <div class="form-group">
+                    <label for="note">
+                        <strong>Notes</strong>
+                    </label>
+
+                    <textarea
+                        id="note"
+                        name="note"
+                        rows="4"
+                        style="width: 100%;"
+                    >{{ part.note or "" }}</textarea>
+                </div>
+
+                <br>
+
+
+                <div class="form-actions">
+
+                    <button
+                        type="submit"
+                        class="primary"
+                    >
+                        Save Part Request
+                    </button>
+
+                    <a href="{{ url_for(
+                        'work_order.work_order_detail',
+                        work_order_id=part.work_order_id
+                    ) }}">
+                        Cancel
+                    </a>
+
+                </div>
+
+            </form>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="card-header">
+                <h2>Catalog Part</h2>
+            </div>
+
 
             {% if part.part_id and linked_part %}
-                <p><strong>Status:</strong> Linked</p>
 
-                <p>
-                    <strong>Part Number:</strong>
-                    {{ linked_part.part_number or "No part number" }}
-                </p>
+                <div class="catalog-link-status">
 
-                <p>
-                    <strong>Part Name:</strong>
-                    {{ linked_part.name }}
-                </p>
+                    <p>
+                        <strong>Status:</strong>
+                        Linked
+                    </p>
 
-                <p>
-                    <strong>Manufacturer:</strong>
-                    {{ linked_part.manufacturer or "N/A" }}
-                </p>
+                    <p>
+                        <strong>Part Number:</strong>
+                        {{ linked_part.part_number or "No part number" }}
+                    </p>
 
-                <p>
-                    <strong>Description:</strong>
-                    {{ linked_part.description or "N/A" }}
-                </p>
+                    <p>
+                        <strong>Part Name:</strong>
+                        {{ linked_part.name }}
+                    </p>
+
+                    <p>
+                        <strong>Manufacturer:</strong>
+                        {{ linked_part.manufacturer or "N/A" }}
+                    </p>
+
+                    <p>
+                        <strong>Description:</strong>
+                        {{ linked_part.description or "N/A" }}
+                    </p>
+
+                </div>
 
                 <hr>
 
-                <form method="POST"
-                    action="{{ url_for(
-                        'part.link_catalog_part_route',
-                        work_order_part_id=part.work_order_part_id
-                    ) }}">
-                    <label><strong>Change Catalog Part</strong></label>
-                    <br>
-
-                    <select name="catalog_part_id" required>
-                        {% for catalog_part in catalog_parts %}
-                            <option 
-                                value="{{ catalog_part.part_id }}"
-                                {% if catalog_part.part_id == part.part_id %}selected{% endif %}
-                            >
-                                {{ catalog_part.part_number or "No Part #" }}
-                                - {{ catalog_part.name }}
-                            </option>
-                        {% endfor %}
-                    </select>
-
-                    <br><br>
-
-                    <button type="submit" class="primary">
-                        Update Link
-                    </button>
-                </form>
-            {% else %}
-                <p>No catalog part linked.</p>
 
                 {% if catalog_parts %}
-                    <form method="POST"
+
+                    <h3>Change Linked Catalog Part</h3>
+
+                    <form
+                        method="POST"
                         action="{{ url_for(
                             'part.link_catalog_part_route',
                             work_order_part_id=part.work_order_part_id
-                    ) }}">
-                            
-                            <label><strong>Select Catalog Part</strong></label>
-                            <br>
+                        ) }}"
+                    >
 
-                            <select name="catalog_part_id" required>
-                                <option value="">-- Select Part --</option>
+                        <div class="catalog-part-options">
 
-                                {% for catalog_part in catalog_parts %}
-                                    <option value="{{ catalog_part.part_id }}">
-                                        {{ catalog_part.part_number or "No Part #" }}
-                                        -{{ catalog_part.name }}
-                                    </option>
-                                {% endfor %}
-                            </select>
+                            {% for catalog_part in catalog_parts %}
 
-                            <br><br>
+                                <label class="part-option">
 
-                            <button type="submit" class="primary">
-                                Link Catalog Part
-                            </button>
+                                    <input
+                                        type="radio"
+                                        name="catalog_part_id"
+                                        value="{{ catalog_part.part_id }}"
+                                        {% if catalog_part.part_id == part.part_id %}
+                                            checked
+                                        {% endif %}
+                                        required
+                                    >
+
+                                    <span>
+
+                                        <strong>
+                                            {{ catalog_part.part_number or "No Part #" }}
+                                            —
+                                            {{ catalog_part.name }}
+                                        </strong>
+
+                                        <br>
+
+                                        Manufacturer:
+                                        {{ catalog_part.manufacturer or "N/A" }}
+
+                                        {% if catalog_part.description %}
+                                            <br>
+                                            {{ catalog_part.description }}
+                                        {% endif %}
+
+                                    </span>
+
+                                </label>
+
+                            {% endfor %}
+
+                        </div>
+
+                        <br>
+
+                        <button
+                            type="submit"
+                            class="primary"
+                        >
+                            Update Link
+                        </button>
+
                     </form>
+
+                {% else %}
+
+                    <p>
+                        No other compatible catalog parts are available.
+                    </p>
+
+                {% endif %}
+
+
+            {% else %}
+
+                <p>
+                    No catalog part is currently linked to this request.
+                </p>
+
+
+                {% if catalog_parts %}
+
+                    <h3>Compatible Catalog Parts</h3>
+
+                    <p>
+                        Select the catalog part that matches this request.
+                    </p>
+
+                    <form
+                        method="POST"
+                        action="{{ url_for(
+                            'part.link_catalog_part_route',
+                            work_order_part_id=part.work_order_part_id
+                        ) }}"
+                    >
+
+                        <div class="catalog-part-options">
+
+                            {% for catalog_part in catalog_parts %}
+
+                                <label class="part-option">
+
+                                    <input
+                                        type="radio"
+                                        name="catalog_part_id"
+                                        value="{{ catalog_part.part_id }}"
+                                        required
+                                    >
+
+                                    <span>
+
+                                        <strong>
+                                            {{ catalog_part.part_number or "No Part #" }}
+                                            —
+                                            {{ catalog_part.name }}
+                                        </strong>
+
+                                        <br>
+
+                                        Manufacturer:
+                                        {{ catalog_part.manufacturer or "N/A" }}
+
+                                        {% if catalog_part.description %}
+                                            <br>
+                                            {{ catalog_part.description }}
+                                        {% endif %}
+
+                                    </span>
+
+                                </label>
+
+                            {% endfor %}
+
+                        </div>
+
+                        <br>
+
+                        <button
+                            type="submit"
+                            class="primary"
+                        >
+                            Link Selected Part
+                        </button>
+
+                    </form>
+
 
                     <hr>
 
-                    <p>Cannot find the correct part?</p>
+                    <div class="empty-state">
 
-                    <a href="{{ url_for(
-                        'part.add_catalog_part',
-                        work_order_part_id=part.work_order_part_id
-                    ) }}">
-                        Create New Catalog Part
-                    </a>
+                        <p>
+                            Cannot find the correct part?
+                        </p>
+
+                        <a href="{{ url_for(
+                            'part.add_catalog_part',
+                            work_order_part_id=part.work_order_part_id
+                        ) }}">
+                            Create New Catalog Part
+                        </a>
+
+                    </div>
+
 
                 {% else %}
-                    <p>No catalog parts are available yet.</p>
 
-                    <a href="{{ url_for(
-                        'part.add_catalog_part',
-                        work_order_part_id=part.work_order_part_id
-                    ) }}">
-                        Crate First Catalog Part
-                    </a>
+                    <div class="empty-state">
+
+                        <p>
+                            No compatible catalog parts are available
+                            for this machine yet.
+                        </p>
+
+                        <a href="{{ url_for(
+                            'part.add_catalog_part',
+                            work_order_part_id=part.work_order_part_id
+                        ) }}">
+                            Create First Catalog Part
+                        </a>
+
+                    </div>
+
                 {% endif %}
+
             {% endif %}
+
         </div>
+
     </div>
+
 </body>
 </html>

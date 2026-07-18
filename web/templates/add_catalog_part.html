@@ -2,65 +2,123 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
+
     <title>Add Catalog Part</title>
 </head>
+
 <body>
+
+    {% include "partials/navbar.html" %}
+    {% include "partials/flag.html" %}
+
     <div class="container">
+
         <div class="header">
             <div>
                 <h1>Add Catalog Part</h1>
-                {% include "partials/navbar.html" %}
-                {% include "partials/flag.html" %}
             </div>
         </div>
 
         <div class="card">
-            <h2>New catalog Part</h2>
+
+            <h2>New Catalog Part</h2>
 
             <form method="POST">
 
-                <label><strong>Part Number</strong></label>
+                {% if work_order_part_id %}
+                    <input
+                        type="hidden"
+                        name="work_order_part_id"
+                        value="{{ work_order_part_id }}"
+                    >
+                {% endif %}
+
+
+                <label for="part_number">
+                    <strong>Part Number</strong>
+                </label>
+
                 <br>
-                <input 
-                    type="text" 
-                    name="part_number" 
-                    style="width: 100%;">
+
+                <input
+                    type="text"
+                    id="part_number"
+                    name="part_number"
+                    style="width: 100%;"
+                >
 
                 <br><br>
 
-                <label><strong>Part Name</strong></label>
+
+                <label for="name">
+                    <strong>Part Name</strong>
+                </label>
+
                 <br>
-                <input 
-                    type="text" 
-                    name="name" 
-                    required 
-                    style="width: 100%;">
+
+                <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    required
+                    style="width: 100%;"
+                >
 
                 <br><br>
 
-                <label><strong>Description</strong></label>
+
+                <label for="description">
+                    <strong>Description</strong>
+                </label>
+
                 <br>
-                <textarea 
-                    name="description" 
+
+                <textarea
+                    id="description"
+                    name="description"
                     rows="4"
-                    style="width: 100%;"></textarea>
+                    style="width: 100%;"
+                ></textarea>
 
                 <br><br>
 
-                <label><strong>Manufacturer</strong></label>
+
+                <label for="manufacturer">
+                    <strong>Manufacturer</strong>
+                </label>
+
                 <br>
-                <input 
-                    type="text" 
+
+                <input
+                    type="text"
+                    id="manufacturer"
                     name="manufacturer"
-                    style="width: 100%;">
+                    style="width: 100%;"
+                >
 
                 <br><br>
 
-                <label><strong>Unit of Measure</strong></label>
+
+                <label for="unit_of_measure">
+                    <strong>Unit of Measure</strong>
+                </label>
+
                 <br>
-                <select name="unit_of_measure">
-                    
+
+                <select
+                    id="unit_of_measure"
+                    name="unit_of_measure"
+                >
                     <option value="each">Each</option>
                     <option value="box">Box</option>
                     <option value="case">Case</option>
@@ -68,35 +126,170 @@
                     <option value="quart">Quart</option>
                     <option value="foot">Foot</option>
                     <option value="roll">Roll</option>
-                    
                 </select>
 
                 <br><br>
 
-                <label><strong>Default Cost</strong></label>
+
+                <label for="default_cost">
+                    <strong>Default Cost</strong>
+                </label>
+
                 <br>
-                <input 
+
+                <input
                     type="number"
+                    id="default_cost"
                     name="default_cost"
-                    step="0.01">
+                    min="0"
+                    step="0.01"
+                >
 
                 <br><br>
 
-                <button class="primary" type="submit">
+
+                <div class="form-section">
+
+                    <h3>Compatible Machine Serials</h3>
+
+                    {% if originating_machine %}
+
+                        <p>
+                            This part is being created from a request for:
+                        </p>
+
+                        <label class="machine-option">
+
+                            <input
+                                type="checkbox"
+                                name="machine_ids"
+                                value="{{ originating_machine.machine_id }}"
+                                checked
+                            >
+
+                            <strong>
+                                Unit {{ originating_machine.unit_number }}
+                            </strong>
+
+                            —
+
+                            {{ originating_machine.make }}
+                            {{ originating_machine.model }}
+
+                            —
+
+                            Serial:
+                            {{
+                                originating_machine.serial_number
+                                or "No serial entered"
+                            }}
+
+                        </label>
+
+                        <br><br>
+
+                        <p>
+                            Select any additional machines that use this part:
+                        </p>
+
+                    {% else %}
+
+                        <p>
+                            Select every machine serial that this part is
+                            compatible with:
+                        </p>
+
+                    {% endif %}
+
+
+                    <div class="machine-options">
+
+                        {% for machine in machines %}
+
+                            {% if not originating_machine
+                                  or machine.machine_id
+                                  != originating_machine.machine_id %}
+
+                                <div class="machine-option">
+
+                                    <label>
+
+                                        <input
+                                            type="checkbox"
+                                            name="machine_ids"
+                                            value="{{ machine.machine_id }}"
+                                        >
+
+                                        <strong>
+                                            Unit {{ machine.unit_number }}
+                                        </strong>
+
+                                        —
+
+                                        {{ machine.make }}
+                                        {{ machine.model }}
+
+                                        —
+
+                                        Serial:
+                                        {{
+                                            machine.serial_number
+                                            or "No serial entered"
+                                        }}
+
+                                    </label>
+
+                                </div>
+
+                                <br>
+
+                            {% endif %}
+
+                        {% else %}
+
+                            <p>
+                                No machines are available.
+                            </p>
+
+                        {% endfor %}
+
+                    </div>
+
+                </div>
+
+                <br>
+
+
+                <button
+                    class="primary"
+                    type="submit"
+                >
                     Add Catalog Part
                 </button>
 
-                <a href="{{ url_for('part.manager_parts') }}">
-                    Cancel
-                </a>
 
                 {% if work_order_part_id %}
-                    <input type="hidden" name="work_order_part_id" value="{{ work_order_part_id }}">
+
+                    <a href="{{ url_for(
+                        'part.manage_part_request',
+                        work_order_part_id=work_order_part_id
+                    ) }}">
+                        Cancel
+                    </a>
+
+                {% else %}
+
+                    <a href="{{ url_for('part.manager_parts') }}">
+                        Cancel
+                    </a>
+
                 {% endif %}
 
             </form>
+
         </div>
+
     </div>
-    
+
 </body>
 </html>
