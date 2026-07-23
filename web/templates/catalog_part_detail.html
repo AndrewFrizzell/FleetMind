@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>{{ catalog_part.part_number or catalog_part.name }}</title>
+</head>
+<body>
+    <div class="container">
+
+        <div class="header">
+            <div>
+                <h1>{{ catalog_part.name }}</h1>
+                {% include "partials/navbar.html" %}
+                {% include "partials/flag.html" %}
+            </div>
+        </div>
+
+        <div class="header_actions">
+            <a href="{{ url_for('part.manager_parts') }}" class="secondary-button">
+                Back to Parts
+            </a>
+
+         {#   <a href="{{ url_for('part.edit_catalog_part', part_id=catalog_part.part_id) }}" 
+                class="primary-button">
+                Edit Part
+            </a> #}
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <h2>Catalog Information</h2>
+
+                    {% if catalog_part.active %}
+                        <span class="status-badge status-active">
+                            Active
+                        </span>
+                    {% else %}
+                        <span class="status-badge status-inactive">
+                            Inactive
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="detail-grid">
+                <div class="detail-item"></div>
+                    <span class="detail-label">Part Number</span>
+
+                    <span class="detail-value">
+                        {{ catalog_part.part_number or "Not assigned"}}
+                    </span>
+            </div>
+
+            <div class="detail_item">
+                <span class="detail-label">Part Name</span>
+
+                <span class="detail-value">
+                    {{ catalog_part.name }}
+                </span>
+            </div>
+
+            <div class="detail-item">
+                <span class="detail-label">Manufacturer</span>
+
+                <span class="detail-value">
+                    {{ catalog_part.manufacturer or "Not assigned" }}
+                </span>
+            </div>
+
+            <div class="detail-item">
+                <span class="detail-label">Unit of Measure</span>
+
+                <span class="detail-value">
+                    {{ catalog_part.unit_of_measure or "Each" }}
+                </span>
+            </div>
+
+            <div class="detail-item">
+                <span class="detail-label">Default Cost</span>
+
+                <span class="detail-value">
+                    {% if catalog_part.default_cost is not none %}
+                        ${{ "%.2f"|format(catalog_part.default_cost) }}
+                    {% else %}
+                        Not Assigned
+                    {% endif %}
+                </span>
+            </div>
+
+            <div class="detail-item">
+                <span class="detail-label">Description</span>
+
+                <span class="detail-value">
+                    {{ catalog_part.description or "No description provided." }}
+                </span>
+            </div>           
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <h2>Compatible Machines</h2>
+
+                    <p class="card-subtitle">
+                        {{ compatible_machines|length }}
+                        compatible
+                        {% if compatible_machines|length == 1 %}
+                            machine
+                        {% else %}
+                            machines
+                        {% endif %}
+                    </p>
+                </div>
+
+             {#   <a href="{{ url_for(
+                    'part.edit_catalog_part',
+                    part_id=catalog_part.part_id
+                    ) }}"
+                >
+                    Edit Compatibility
+                </a> #}
+            </div>
+
+            {% if compatible_machines %}
+                <div class="machine-card-list">
+                    {% for machine in compatible_machines %}
+                        <div class="machine-list-card">
+                            <div class="machine-list-heading">
+                                <div>
+                                    <a href="{{url_for(
+                                        'machine.machine_profile',
+                                        machine_id=machine.machine_id
+                                    )}}">
+                                        <strong>
+                                            Unit {{ machine.unit_number }}
+                                        </strong>
+                                    </a>
+
+                                    <div class="machine-description">
+                                        {{ machine.year or "" }}
+                                        {{ machine.make or "" }}
+                                        {{ machine.model or "" }}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    {% if machine.operational_state == "down" %}
+                                        <span class="status-badge status-down">
+                                            Down
+                                        </span>
+                                    {% elif machine.operational_state == "running_with_faults" %}
+                                        <span class="status-badge status-warning">
+                                            Running With Faults
+                                        </span>
+                                    {% else %}
+                                        <span class="status-badge status-active">
+                                            Running
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="machine-identifiers">
+
+                                <div>
+                                    <span class="detail-label">
+                                        Serial Number
+                                    </span>
+
+                                    <span class="detail-value">
+                                        {{ machine.serial_number or "N/A" }}
+                                    </span>
+                                </div>
+
+
+                                <div>
+                                    <span class="detail-label">
+                                        VIN
+                                    </span>
+
+                                    <span class="detail-value">
+                                        {{ machine.vin_number or "N/A" }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+
+                <div class="empty-state">
+                    <p>
+                        This part has not been assigned to any compatible machines yet.
+                    </p>
+
+                 {#   <a href="{{url_for(
+                        'part.edit_catalog_part',
+                        part_id=catalog_part.part_id
+                    )}}">
+                        Add Compatible Machines
+                    </a> #}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <h2>Work Order History</h2>
+
+                    <p class="card-subtitle">
+                        Requests linked to this catalog part
+                    </p>
+                </div>
+            </div>
+
+            {% if request_history %}
+                <div class="table-wrapper">
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Work Order</th>
+                                <th>Machine</th>
+                                <th>Quantity</th>
+                                <th>Part Status</th>
+                                <th>Work Order Status</th>
+                                <th>Created</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {% for request in request_history %}
+
+                                <tr>
+                                    <td>
+                                        <strong>
+                                            WO-{{ request.work_order_id }}
+                                        </strong>
+                                    </td>
+
+                                    <td>
+                                        <a href="{{ url_for(
+                                            'machine.machine_profile',
+                                            machine_id=request.machine_id
+                                        )}}">
+                                            Unit {{ request.unit_number }}
+                                        </a>
+
+                                        <br>
+
+                                        <small>
+                                            {{ request.make or "" }}
+                                            {{ request.model or "" }}
+                                        </small>
+                                    </td>
+
+                                    <td>
+                                        {{ request.quantity }}
+                                    </td>
+
+                                    <td>
+                                        {{ request.status|replace("_", " ")|title }}
+                                    </td>
+
+                                    <td>
+                                        {{ request.work_order_status|replace("_", " ")|title }}
+                                    </td>
+
+                                    <td>
+                                        {{ request.created_at or "N/A" }}
+                                    </td>
+
+                                    <td>
+                                        <a href="{{ url_for(
+                                            'work_order.work_order_detail',
+                                            work_order_id=request.work_order_id
+                                        )}}">
+                                            View
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <p>
+                        This catalog part has not been linked to any work-order request yet.
+                    </p>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="card danger-zone">
+            <div>
+                <h2>Part Status</h2>
+
+                <p>
+                    Deactivation a part removes it from new part selections,
+                    but keeps its existiong work-order history.
+                </p>
+            </div>
+
+            {% if catalog_part.active %}
+           {#    <form method="POST" action="{{ url_for(
+                    'part.deactivate_catalog_part',
+                    part_id=catalog_part.part_id
+                ) }}"> #}
+                    <button 
+                        type="submit"
+                        class="danger-button",
+                        onclick="return confirm(
+                            'Deactivate this catalog part?'
+                        )"
+                    >
+                        Deactivate Part
+                    </button>
+                </form>
+            {% else %}
+                <span class="status-badge status-inactive">
+                    Part Inactive
+                </span>
+            {% endif %}
+        </div>
+
+        
+    </div>
+    
+</body>
+</html>

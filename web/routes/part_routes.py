@@ -19,7 +19,10 @@ from logic_mods.parts import (
     get_open_part_requests,
     update_work_order_part_details,
     link_catalog_part_to_request,
-    add_part_machine_compatibilities
+    add_part_machine_compatibilities,
+    get_catalog_part_by_id,
+    get_compatible_machines_for_part,
+    get_part_request_history
 )
 
 from logic_mods.work_orders import (
@@ -459,3 +462,31 @@ def link_catalog_part_route(work_order_part_id):
             work_order_part_id=work_order_part_id
         )
     )
+
+@part_bp.route("/manager/parts/<int:part_id>")
+@login_required
+def catalog_part_detail(part_id):
+    if session.get("role") != "equipment_manager":
+        return "Forbidden", 403
+    
+    conn = get_connection()
+
+    try:
+        catalog_part = get_catalog_part_by_id(conn, part_id)
+
+        if catalog_part is None:
+            return "Part not found.", 404
+        
+        compatible_machines = get_compatible_machines_for_part(conn, part_id)
+
+        request_history = get_part_request_history(conn, part_id)
+
+        return render_template(
+            "catalog_part_detail.html",
+            catalog_part=catalog_part,
+            compatible_machines=compatible_machines,
+            request_history=request_history
+        )
+    
+    finally:
+        conn.close()

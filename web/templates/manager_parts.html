@@ -40,7 +40,14 @@
 
                     {% for part in parts %}
                         <tr>
-                            <td>{{ part.part_number or "N/A" }}</td>
+                            <td>
+                                <a href="{{ url_for(
+                                    'part.catalog_part_detail',
+                                    part_id=part.part_id
+                                )}}">
+                                    {{ part.part_number or part.name }}
+                                </a>
+                            </td>
                             <td>{{ part.name }}</td>
                             <td>{{ part.description or "" }}</td>
                             <td>{{ part.manufacturer or "" }}</td>

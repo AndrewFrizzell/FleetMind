@@ -254,5 +254,86 @@ def add_part_machine_compatibilities(conn, part_id, machine_ids):
             machine_id
         ))
 
+def get_catalog_part_by_id(conn, part_id):
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT
+            p.*
+        FROM Part p
+        WHERE p.part_id = ?
+    """, (part_id,))
+
+    return cur.fetchone()
+
+def get_compatible_machines_for_part(conn, part_id):
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT
+            m.machine_id,
+            m.unit_number,
+            m.year,
+            m.make,
+            m.model,
+            m.serial_number,
+            m.vin_number,
+            m.status,
+            m.operational_state
+        FROM PartMachineCompatibility pmc
+                
+        JOIN Machine m
+            ON pmc.machine_id = m.machine_id
+        
+        WHERE pmc.part_id = ?
+            AND m.active = 1
+                
+        ORDER BY 
+            m.unit_number
+    """, (part_id,))
+
+    return cur.fetchall()
+
+def get_part_request_history(conn, part_id):
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT
+            wop.work_order_part_id,
+            wop.work_order_id,
+            wop.description,
+            wop.quantity,
+            wop.status,
+            wop.part_number,
+            wop.note,
+                
+            wo.status AS work_order_status,
+            wo.priority,
+            wo.created_at,
+            wo.completed_at,
+                
+            m.machine_id,
+            m.unit_number,
+            m.make,
+            m.model,
+            m.serial_number
+                
+        FROM WorkOrderPart wop
+                
+        JOIN WorkOrder wo
+            ON wop.work_order_id = wo.work_order_id
+                
+        JOIN Machine m
+            ON wo.machine_id = m.machine_id
+        
+        where wop.part_id = ?
+                
+        ORDER BY 
+            wo.created_at DESC,
+            wop.work_order_part_id DESC
+    """, (part_id,))
+
+    return cur.fetchall()
+
 
     
